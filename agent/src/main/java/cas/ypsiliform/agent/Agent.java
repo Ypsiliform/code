@@ -61,7 +61,70 @@ public class Agent {
         return 0;
     }
 
+    /**
+     * Calculate the costs that arise because of required preproduction.
+     * @param items number of items that need to be preproduced
+     * @return a double value indicating the created costs by setup and storage costs of the past
+     * */
+    protected double getInitCosts(int items) {
+        double initCosts;
+        int productionDays;
+        int stored_items;
 
+        if(items == 0) {
+            //preproduction is not necessary
+            initCosts = 0;
+        } else {
+            //calculate the number of production days
+            productionDays = items / this.productionLimit;
+            if(items % productionDays != 0)
+                productionDays++;
+
+            //sum up the setup costs
+            initCosts = productionDays * setupCost;
+
+            //calculate the costs of storing the products
+            stored_items = items % this.productionLimit;
+            do {
+                initCosts += stored_items * this.storageCost;
+                stored_items += this.productionLimit;
+            } while(stored_items < items);
+        }
+
+        return initCosts;
+    }
+
+    /**
+     * Calculates the costs that are created by the created production plan and the demand
+     * @param production plan that contains data when and how many items are built
+     * @param demand Contains the details of how many items can be retreived in a period
+     * */
+    protected double getProductionCosts(int[] production, int[] demand) {
+        double costs = getInitCosts(production[0]);
+        int itemsInStore = production[0];
+
+        for(int i=0;i<demand.length;i++) {
+
+            //see if on that day there were production costs
+            if(production[i+1] > 0)
+                costs += this.setupCost;
+
+            //calculate the number of items in store that day and sum up the costs
+            itemsInStore += production[i+1];
+            itemsInStore -= demand[i];
+            costs += itemsInStore * this.storageCost;
+        }
+
+        return costs;
+    }
+
+
+    /**
+     * Creates the production array that is ideal for the prodvided production days
+     * @param demand This array contains the demand per days
+     * @param production_days boolean array that defines on which periods it is allowed to produce something
+     * @return and int[] that contains the created mapping of production periods
+     * */
     protected int[] getProductionArray(int[] demand, boolean[] production_days) {
         int production_array[] = new int[demand.length + 1];
         int demandOnDay;
@@ -79,7 +142,7 @@ public class Agent {
                 }
 
                 //check if it is allowed to produce on that day
-                if(production_days[j] == false)
+                if(production_days[j-1] == false)
                     continue;
 
                 //check if on the current day there is enough capacity left to produce
