@@ -20,52 +20,68 @@ import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.decoder.IncomingMessageDecoder;
 import cas.ypsiliform.messages.encoder.EndNegotiationEncoder;
 import cas.ypsiliform.messages.encoder.ErrorMessageEncoder;
-import cas.ypsiliform.messages.encoder.SendProposalEncoder;
+import cas.ypsiliform.messages.encoder.MediatorRequestEncoder;
 
-@ServerEndpoint(value = "/mediator", decoders = { IncomingMessageDecoder.class }, encoders = {
-		ErrorMessageEncoder.class, SendProposalEncoder.class, EndNegotiationEncoder.class })
-public class MediatorWebsocket {
+@ServerEndpoint(value = "/mediator",
+        decoders = { IncomingMessageDecoder.class },
+        encoders = { ErrorMessageEncoder.class, MediatorRequestEncoder.class,
+            EndNegotiationEncoder.class })
+public class MediatorWebsocket
+{
 
-	private static final Logger LOGGER = Logger.getLogger(MediatorWebsocket.class.getName());
+    private static final Logger LOGGER =
+        Logger.getLogger(MediatorWebsocket.class.getName());
 
-	private SessionRepository repo;
+    private SessionRepository repo;
 
-	@Inject
-	private Event<AbstractMessage> event;
+    @Inject
+    private Event<AbstractMessage> event;
 
-	@PostConstruct
-	public void lookup() {
-		try {
-			InitialContext context = new InitialContext();
-			repo = (SessionRepository) context.lookup(SessionRepository.LOOKUP);
-		} catch (NamingException e) {
-			LOGGER.log(Level.SEVERE, "could not lookup SessionRepositoryBean", e);
-		}
-	}
+    @PostConstruct
+    public void lookup()
+    {
+        try
+        {
+            InitialContext context = new InitialContext();
+            repo = (SessionRepository) context.lookup(SessionRepository.LOOKUP);
+        }
+        catch ( NamingException e )
+        {
+            LOGGER.log(Level.SEVERE,
+                       "could not lookup SessionRepositoryBean",
+                       e);
+        }
+    }
 
-	@OnOpen
-	public void onOpen(Session session) {
-		LOGGER.severe("new session " + session);
-		repo.addSession(session);
-	}
+    @OnOpen
+    public void onOpen(Session session)
+    {
+        LOGGER.severe("new session " + session);
+        repo.addSession(session);
+    }
 
-	@OnMessage
-	public void onMessage(Session session, AbstractMessage receivedMsg) {
-		LOGGER.severe("new message received : " + receivedMsg + " session = " + session);
-		EndNegotiation data = new EndNegotiation();
-		data.setSolution(new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 });
-		session.getAsyncRemote().sendObject(data);
-		event.fire(receivedMsg);
-	}
+    @OnMessage
+    public void onMessage(Session session, AbstractMessage receivedMsg)
+    {
+        LOGGER.severe("new message received : " + receivedMsg + " session = "
+            + session);
+        EndNegotiation data = new EndNegotiation();
+        data.setSolution(new boolean[] { true, false, true, false, true, false,
+            true, false, true, false, true, false });
+        session.getAsyncRemote().sendObject(data);
+        event.fire(receivedMsg);
+    }
 
-	@OnClose
-	public void onClose(Session session) {
-		repo.removeSession(session.getId());
-	}
+    @OnClose
+    public void onClose(Session session)
+    {
+        repo.removeSession(session.getId());
+    }
 
-	@OnError
-	public void onError(Session session, Throwable thrownable) {
-		repo.removeSession(session.getId());
-	}
+    @OnError
+    public void onError(Session session, Throwable thrownable)
+    {
+        repo.removeSession(session.getId());
+    }
 
 }
