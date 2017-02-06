@@ -61,10 +61,44 @@ public class Agent {
         return 0;
     }
 
-    private int[] getProductionArray(int[] demand) {
 
-        for (int i: demand) {
+    protected int[] getProductionArray(int[] demand, boolean[] production_days) {
+        int production_array[] = new int[demand.length + 1];
+        int demandOnDay;
+        int remainingCapacity;
 
+        //iterate through the demand array to calculate the demand
+        for (int i=0;i<demand.length;i++) {
+            demandOnDay = demand[i];
+            //iterate through the production array and set the numbers to be produced
+            for (int j=i+1;j>=0;j--) {
+                //check if the last value is reached, then the remaining numbers need to be produced in advance
+                if(j == 0){
+                    production_array[j]+=demandOnDay;
+                    break;
+                }
+
+                //check if it is allowed to produce on that day
+                if(production_days[j] == false)
+                    continue;
+
+                //check if on the current day there is enough capacity left to produce
+                remainingCapacity = this.productionLimit - production_array[j];
+                if(remainingCapacity > 0) {
+                    //assign as much capacity as possible or needed
+                    if(demandOnDay <= remainingCapacity) {
+                        //there is enough capacity available
+                        production_array[j]+=demandOnDay;
+                        break;
+                    } else {
+                        //there is not enough capacity available
+                        production_array[j]+=remainingCapacity;
+                        demandOnDay-=remainingCapacity;
+                    }
+                }
+            }
         }
+
+        return production_array;
     }
 }
