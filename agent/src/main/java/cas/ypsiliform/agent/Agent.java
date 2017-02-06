@@ -95,15 +95,15 @@ public class Agent {
     }
 
     /**
-     * Calculates the costs that are created by the created production plan and the demand
+     * Calculates the costs that are created by the created production plan and the demands
      * @param production plan that contains data when and how many items are built
-     * @param demand Contains the details of how many items can be retreived in a period
+     * @param demands Contains the details of how many items can be retreived in a period
      * */
-    protected double getProductionCosts(int[] production, int[] demand) {
+    protected double getProductionCosts(int[] production, int[] demands) {
         double costs = getInitCosts(production[0]);
         int itemsInStore = production[0];
 
-        for(int i=0;i<demand.length;i++) {
+        for(int i=0;i<demands.length;i++) {
 
             //see if on that day there were production costs
             if(production[i+1] > 0)
@@ -111,7 +111,7 @@ public class Agent {
 
             //calculate the number of items in store that day and sum up the costs
             itemsInStore += production[i+1];
-            itemsInStore -= demand[i];
+            itemsInStore -= demands[i];
             costs += itemsInStore * this.storageCost;
         }
 
@@ -121,42 +121,42 @@ public class Agent {
 
     /**
      * Creates the production array that is ideal for the prodvided production days
-     * @param demand This array contains the demand per days
-     * @param production_days boolean array that defines on which periods it is allowed to produce something
+     * @param demands This array contains the demands per days
+     * @param productionDays boolean array that defines on which periods it is allowed to produce something
      * @return and int[] that contains the created mapping of production periods
      * */
-    protected int[] getProductionArray(int[] demand, boolean[] production_days) {
-        int production_array[] = new int[demand.length + 1];
-        int demandOnDay;
+    protected int[] getProductionArray(int[] demands, boolean[] productionDays) {
+        int production_array[] = new int[demands.length + 1];
+        int singleDemand;
         int remainingCapacity;
 
-        //iterate through the demand array to calculate the demand
-        for (int i=0;i<demand.length;i++) {
-            demandOnDay = demand[i];
+        //iterate through the demands array to calculate the demand
+        for (int i=0;i<demands.length;i++) {
+            singleDemand = demands[i];
             //iterate through the production array and set the numbers to be produced
             for (int j=i+1;j>=0;j--) {
                 //check if the last value is reached, then the remaining numbers need to be produced in advance
                 if(j == 0){
-                    production_array[j]+=demandOnDay;
+                    production_array[j]+=singleDemand;
                     break;
                 }
 
                 //check if it is allowed to produce on that day
-                if(production_days[j-1] == false)
+                if(productionDays[j-1] == false)
                     continue;
 
                 //check if on the current day there is enough capacity left to produce
                 remainingCapacity = this.productionLimit - production_array[j];
                 if(remainingCapacity > 0) {
                     //assign as much capacity as possible or needed
-                    if(demandOnDay <= remainingCapacity) {
+                    if(singleDemand <= remainingCapacity) {
                         //there is enough capacity available
-                        production_array[j]+=demandOnDay;
+                        production_array[j]+=singleDemand;
                         break;
                     } else {
                         //there is not enough capacity available
                         production_array[j]+=remainingCapacity;
-                        demandOnDay-=remainingCapacity;
+                        singleDemand-=remainingCapacity;
                     }
                 }
             }
