@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import cas.ypsiliform.mediator.async.Thenable;
 import cas.ypsiliform.messages.AgentResponse;
+import cas.ypsiliform.messages.MediatorRequest;
 
 public class AgentProxy {
 	private ArrayList<AgentDeadListener> listeners = new ArrayList<AgentDeadListener>();
@@ -31,7 +32,7 @@ public class AgentProxy {
 		throw new UnsupportedOperationException();
 	}
 
-	public Thenable<AgentResponse> sendSolutionProposal(SolutionProposal solution) {
+	public Thenable<AgentResponse> sendSolutionProposals(MediatorRequest solution) {
 		// TODO implementation missing
 		throw new UnsupportedOperationException();
 	}

@@ -1,7 +1,9 @@
 package cas.ypsiliform.mediator.async;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,9 +19,9 @@ public class Thenable<T> {
     private T resolve;
     private boolean resolved = false;
     private boolean resolving = false;
-
-    public static Thenable<Object[]> whenAll(final Thenable... elements) {
-        final Map<Integer, Object> values = new HashMap<Integer, Object>();
+    
+    public static Thenable<Object[]> whenAll(final List<Thenable> elements) {
+    	final Map<Integer, Object> values = new HashMap<Integer, Object>();
         final Thenable<Object[]> asyncReturn = new Thenable<Object[]>();
 
         class IterativeAction<T> implements Action<T> {
@@ -33,7 +35,7 @@ public class Thenable<T> {
             public void perform(T data) {
                 values.put(i, data);
 
-                if (values.size() == elements.length) {
+                if (values.size() == elements.size()) {
                     Object[] vals = new Object[values.size()];
                     for (int i = 0; i < values.size(); i++)
                         vals[i] = values.get(i);
@@ -43,11 +45,17 @@ public class Thenable<T> {
             }
         }
 
-        for (int i = 0; i < elements.length; i++) {
-            elements[i].then(new IterativeAction(i));
-        }
+        int i = 0;
+        for (Thenable element : elements) {
+			element.then(new IterativeAction(i));
+			i++;
+		}
 
         return asyncReturn;
+    }
+
+    public static Thenable<Object[]> whenAll(final Thenable... elements) {
+        return whenAll(Arrays.asList(elements));
     }
 
     public boolean isResolved() {
