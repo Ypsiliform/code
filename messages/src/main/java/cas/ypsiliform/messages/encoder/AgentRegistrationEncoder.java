@@ -58,14 +58,4 @@ public class AgentRegistrationEncoder
         return array;
     }
 
-    private JsonArrayBuilder getJsonArray(int[] intArray)
-    {
-        JsonArrayBuilder array = Json.createArrayBuilder();
-        for ( int value : intArray )
-        {
-            array.add(value);
-        }
-        return array;
-    }
-
 }

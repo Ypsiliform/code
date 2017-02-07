@@ -1,18 +1,27 @@
 package cas.ypsiliform.agent;
 
+import cas.ypsiliform.agent.websocket.MessageHandler;
+import cas.ypsiliform.agent.websocket.WebsocketClient;
+import cas.ypsiliform.messages.*;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Map;
 
 /**
  * Created by paul on 06.02.17.
  */
 
-public class Agent {
+public class Agent implements MessageHandler{
 
     private double setupCost;
     private double storageCost;
     private int productionLimit;
     private ArrayList<Integer> children;
+    private WebsocketClient client;
 
     /**
      * Agent constructor to initialize an agent
@@ -56,11 +65,6 @@ public class Agent {
         this.productionLimit = productionLimit;
     }
 
-
-    private int startWebsocket() {
-        return 0;
-    }
-
     /**
      * Calculate the costs that arise because of required preproduction.
      * @param items number of items that need to be preproduced
@@ -76,7 +80,6 @@ public class Agent {
             initCosts = 0;
         } else {
             //calculate the number of production days
-            productionDays = 1;
             productionDays = items / this.productionLimit;
             if(items % this.productionLimit != 0)
                 productionDays++;
@@ -100,7 +103,7 @@ public class Agent {
      * @param production plan that contains data when and how many items are built
      * @param demands Contains the details of how many items can be retreived in a period
      * */
-    protected double getProductionCosts(int[] production, int[] demands) {
+    protected double getProductionCosts(Integer[] production, Integer[] demands) {
         double costs = getInitCosts(production[0]);
         int itemsInStore = production[0];
 
@@ -129,8 +132,9 @@ public class Agent {
      * @param productionDays boolean array that defines on which periods it is allowed to produce something
      * @return and int[] that contains the created mapping of production periods
      * */
-    protected int[] getProductionArray(int[] demands, boolean[] productionDays) {
-        int production_array[] = new int[demands.length + 1];
+    protected Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
+        Integer production_array[] = new Integer[demands.length + 1];
+        Arrays.fill(production_array, new Integer(0));
         int singleDemand;
         int remainingCapacity;
 
@@ -168,4 +172,100 @@ public class Agent {
 
         return production_array;
     }
+
+
+    /**
+     * Creates a websocket and connects it to the provided URI.
+     * @param websocketAddr URI of the websocket
+     * @return 0 if successful
+     * */
+    private int createWebsocket(URI websocketAddr) {
+        URI url = websocketAddr;
+        if(websocketAddr == null) {
+            try {
+                url = new URI("ws://localhost:8080/mediator/mediator");
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        }
+
+        this.client = new WebsocketClient(url);
+        return 0;
+    }
+
+    @Override
+    /**
+     * Provides message handling capabilities to the agent. So far these messages are supported:
+     * MediatorRequest:  agent calculates answer and sends it back
+     * EndOfNegotiation: agent simple prints its result for debugging purposes
+     * ErrorMessage:     agent prints the error
+     * All other message types also cause printing of an error
+     *
+     * @param message    Incoming message that needs handling
+     * */
+    public void onNewMessage(AbstractMessage message) {
+
+        //depending on the messagetype, call the corresponding messagehandler
+        if(message instanceof MediatorRequest) {
+            AgentResponse res = handleMediatorRequest((MediatorRequest) message);
+            this.client.sendMessage(res);
+        } else if (message instanceof EndNegotiation) {
+            handleEndNegotiation((EndNegotiation) message);
+        } else if (message instanceof ErrorMessage) {
+            handleErrorMessage((ErrorMessage) message);
+        } else {
+            System.out.println("Unknown message " + message.toString());
+        }
+    }
+
+    /**
+     * Handles the MedaitorRequest mesage by calculating the production arrays based on the demand
+     * and the provided solution of the mediator.
+     * @param req MediatorRequest containing the demands and solutions
+     * @return AgentResponse object containing the production arrays, costs and selection
+     * */
+    protected AgentResponse handleMediatorRequest(MediatorRequest req) {
+        Solution proposal;
+        Integer[] productionArray;
+        double cost;
+        double best_solution_costs = 0;
+
+        //create the AgentResponse object
+        AgentResponse res = new AgentResponse();
+        Map<Integer, Double>    costs = res.getCosts();
+        Map<Integer, Integer[]> productionArrays = res.getDemands();
+
+        //iterate all proposals and calculate the production arrays and theirs costs
+        Map<Integer, Solution>  solutions = req.getSolutions();
+        for(int i=0; i < solutions.size();i++) {
+            proposal = solutions.get(i);
+
+            //store the calculated array
+            productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
+            productionArrays.put(i, productionArray);
+
+            //store the calculated costs
+            cost = getProductionCosts(productionArray, proposal.getDemands());
+            costs.put(i, cost);
+
+            //update the selected solution if possible
+            if(best_solution_costs == 0 || cost < best_solution_costs){
+                best_solution_costs = cost;
+                res.setSelection(i);
+            }
+        }
+
+        return res;
+    }
+
+    protected int handleEndNegotiation(EndNegotiation msg) {
+        return 0;
+    }
+
+    protected int handleErrorMessage(ErrorMessage errmsg) {
+        System.out.println("Received Error Message: " + errmsg.toString());
+        return 0;
+    }
+
 }

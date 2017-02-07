@@ -33,13 +33,26 @@ public class EndNegotiationEncoder
         {
             JsonObjectBuilder builder = Json.createObjectBuilder();
             builder.add("type", "endnegotiation");
-            builder.add("solution", getJsonArray(object.getSolution()));
+            builder.add("solution",
+                        getJsonArray(object.getSolution().getSolution()));
+            builder.add("demands",
+                        getJsonArray(object.getSolution().getDemands()));
             return builder.build().toString();
         }
         catch ( Exception e )
         {
             throw new EncodeException(object, "Failed encode object", e);
         }
+    }
+
+    private JsonArrayBuilder getJsonArray(Integer[] intArray)
+    {
+        JsonArrayBuilder array = Json.createArrayBuilder();
+        for ( Integer value : intArray )
+        {
+            array.add(value);
+        }
+        return array;
     }
 
     private JsonArrayBuilder getJsonArray(boolean[] boolArray)
