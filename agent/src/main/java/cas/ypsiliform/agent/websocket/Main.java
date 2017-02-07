@@ -9,7 +9,7 @@ public class Main {
 
 	public static void main(String[] args) {
 		try {
-			WebsocketClient client = new WebsocketClient(new URI("ws://localhost/mediator/mediator"));
+			WebsocketClient client = new WebsocketClient(new URI("ws://localhost:8080/mediator/mediator"));
 			AgentRegistration reg = new AgentRegistration();
 			reg.setId(1234);
 			reg.setConfig("blabliblub");

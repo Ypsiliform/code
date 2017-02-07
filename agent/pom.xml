@@ -39,5 +39,11 @@
 			<artifactId>messages</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-	</dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>RELEASE</version>
+			<scope>test</scope>
+        </dependency>
+    </dependencies>
 </project>
