@@ -18,6 +18,7 @@ public class AgentData
     private int id;
     private String config;
     private List<AgentData> childAgents = new ArrayList<>();
+    private AgentData parentAgent;
     private int[] initialDemand;
 
     public AgentData(int id,
@@ -66,7 +67,18 @@ public class AgentData
         if ( !childAgents.contains(agentData) )
         {
             childAgents.add(agentData);
+            agentData.setParentAgent(this);
         }
+    }
+
+    public AgentData getParentAgent()
+    {
+        return parentAgent;
+    }
+
+    public void setParentAgent(AgentData parentAgent)
+    {
+        this.parentAgent = parentAgent;
     }
 
     public void sendMessage(AbstractMessage message)

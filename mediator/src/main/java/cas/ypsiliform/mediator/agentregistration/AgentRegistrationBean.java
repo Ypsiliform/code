@@ -14,6 +14,7 @@ import javax.ejb.Local;
 import javax.ejb.Singleton;
 import javax.enterprise.event.Observes;
 
+import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.mediator.websocket.SessionRepository;
 import cas.ypsiliform.messages.AgentRegistration;
@@ -26,7 +27,7 @@ public class AgentRegistrationBean
 
     private Map<String, Map<Integer, List<Integer>>> requiresCache =
         new HashMap<>();
-    private Map<String, Map<Integer, AgentData>> configAgentMap =
+    private Map<String, Map<Integer, AgentProxy>> configAgentMap =
         new HashMap<>();
 
     @Override
@@ -36,7 +37,7 @@ public class AgentRegistrationBean
         if ( event.getMessage() instanceof AgentRegistration )
         {
             AgentRegistration regMsg = (AgentRegistration) event.getMessage();
-            Map<Integer, AgentData> agentMap =
+            Map<Integer, AgentProxy> agentMap =
                 configAgentMap.get(regMsg.getConfig());
             if ( agentMap == null )
             {
@@ -46,7 +47,7 @@ public class AgentRegistrationBean
                                             regMsg.getConfig(),
                                             regMsg.getDemand(),
                                             event.getSession());
-            agentMap.put(agent.getId(), agent);
+            agentMap.put(agent.getId(), new AgentProxy(agent));
             configAgentMap.put(agent.getConfig(), agentMap);
 
             buildTree(agentMap, agent, regMsg.getRequires());
@@ -59,14 +60,15 @@ public class AgentRegistrationBean
         }
     }
 
-    private void checkCache(String config, Map<Integer, AgentData> agentMap)
+    private void checkCache(String config, Map<Integer, AgentProxy> agentMap)
     {
         Map<Integer, List<Integer>> requires = requiresCache.get(config);
         if ( requires != null )
         {
             List<Integer> toRemove = new ArrayList<>();
             requires.entrySet().forEach(entry -> {
-                AgentData agentData = agentMap.get(entry.getKey());
+                AgentData agentData =
+                    agentMap.get(entry.getKey()).getAgentData();
                 if ( buildTree(agentMap, agentData, entry.getValue()) )
                 {
                     toRemove.add(entry.getKey());
@@ -82,7 +84,7 @@ public class AgentRegistrationBean
         }
     }
 
-    private boolean buildTree(Map<Integer, AgentData> agentMap,
+    private boolean buildTree(Map<Integer, AgentProxy> agentMap,
                               AgentData agent,
                               List<Integer> requires)
     {
@@ -90,7 +92,7 @@ public class AgentRegistrationBean
         {
             if ( agentMap.containsKey(id) )
             {
-                agent.addChildren(agentMap.get(id));
+                agent.addChildren(agentMap.get(id).getAgentData());
             }
             else
             {
@@ -115,18 +117,22 @@ public class AgentRegistrationBean
             List<AgentData> result = entry.getValue()
                 .values()
                 .stream()
+                .map(AgentProxy::getAgentData)
                 .filter(p -> p.getSession().getId().equals(id))
                 .collect(Collectors.toList());
             toRemove.addAll(result);
         });
         toRemove.forEach(a -> {
-            Map<Integer, AgentData> map = configAgentMap.get(a.getConfig());
-            map.remove(a.getId());
+            Map<Integer, AgentProxy> map = configAgentMap.get(a.getConfig());
+            AgentProxy proxy = map.remove(a.getId());
             if ( map.isEmpty() )
             {
                 configAgentMap.remove(a.getConfig());
             }
-            //TODO: agent wrapper informieren das Agent gelöscht worden ist
+            if ( proxy != null )
+            {
+                proxy.onAgentRemoved();
+            }
         });
     }
 
