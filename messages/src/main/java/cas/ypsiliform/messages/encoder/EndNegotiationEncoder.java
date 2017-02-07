@@ -45,10 +45,10 @@ public class EndNegotiationEncoder
         }
     }
 
-    private JsonArrayBuilder getJsonArray(int[] intArray)
+    private JsonArrayBuilder getJsonArray(Integer[] intArray)
     {
         JsonArrayBuilder array = Json.createArrayBuilder();
-        for ( int value : intArray )
+        for ( Integer value : intArray )
         {
             array.add(value);
         }

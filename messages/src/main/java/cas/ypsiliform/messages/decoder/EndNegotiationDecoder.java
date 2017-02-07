@@ -44,7 +44,7 @@ public class EndNegotiationDecoder
         {
             solArray[i] = array.getBoolean(i);
         }
-        int[] demArray = new int[demand.size()];
+        Integer[] demArray = new Integer[demand.size()];
         for ( int i = 0; i < demand.size(); i++ )
         {
             demArray[i] = demand.getInt(i);
