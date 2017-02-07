@@ -1,35 +1,72 @@
 package cas.ypsiliform.messages;
 
-public class AgentRegistration extends AbstractMessage {
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-	private int id;
-	private String config;
+public class AgentRegistration
+    extends AbstractMessage
+{
 
-	public int getId() {
-		return id;
-	}
+    private int id;
+    private String config;
+    private List<Integer> requires = new ArrayList<>();
+    private int[] demand = new int[0];
 
-	public void setId(int id) {
-		this.id = id;
-	}
+    public int getId()
+    {
+        return id;
+    }
 
-	public String getConfig() {
-		return config;
-	}
+    public void setId(int id)
+    {
+        this.id = id;
+    }
 
-	public void setConfig(String config) {
-		this.config = config;
-	}
+    public String getConfig()
+    {
+        return config;
+    }
 
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("AgentRegistration [id=");
-		builder.append(id);
-		builder.append(", config=");
-		builder.append(config);
-		builder.append("]");
-		return builder.toString();
-	}
+    public void setConfig(String config)
+    {
+        this.config = config;
+    }
+
+    public List<Integer> getRequires()
+    {
+        return requires;
+    }
+
+    public void setRequires(List<Integer> requires)
+    {
+        this.requires = requires;
+    }
+
+    public int[] getDemand()
+    {
+        return demand;
+    }
+
+    public void setDemand(int[] demand)
+    {
+        this.demand = demand;
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("AgentRegistration [id=");
+        builder.append(id);
+        builder.append(", config=");
+        builder.append(config);
+        builder.append(", requires=");
+        builder.append(requires);
+        builder.append(", demand=");
+        builder.append(Arrays.toString(demand));
+        builder.append("]");
+        return builder.toString();
+    }
 
 }

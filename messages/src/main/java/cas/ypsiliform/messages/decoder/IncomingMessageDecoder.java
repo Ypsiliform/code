@@ -20,10 +20,10 @@ public class IncomingMessageDecoder implements Decoder.Text<AbstractMessage> {
 	public void init(EndpointConfig config) {
 		decoders.add(new AgentRegistrationDecoder());
 		decoders.add(new ErrorMessageDecoder());
-		decoders.add(new ResponseProposalDecoder());
+		decoders.add(new AgentResponseDecoder());
 		decoders.add(new StartNegotiationDecoder());
 		decoders.add(new EndNegotiationDecoder());
-		decoders.add(new SendProposalDecoder());
+		decoders.add(new MediatorRequestDecoder());
 	}
 
 	@Override

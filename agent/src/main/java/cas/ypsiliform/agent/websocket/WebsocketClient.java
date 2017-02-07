@@ -18,10 +18,10 @@ import cas.ypsiliform.messages.AbstractMessage;
 import cas.ypsiliform.messages.decoder.IncomingMessageDecoder;
 import cas.ypsiliform.messages.encoder.AgentRegistrationEncoder;
 import cas.ypsiliform.messages.encoder.ErrorMessageEncoder;
-import cas.ypsiliform.messages.encoder.ResponseProposalEncoder;
+import cas.ypsiliform.messages.encoder.AgentResponseEncoder;
 import cas.ypsiliform.messages.encoder.StartNegotiationEncoder;
 
-@ClientEndpoint(encoders = { ErrorMessageEncoder.class, AgentRegistrationEncoder.class, ResponseProposalEncoder.class,
+@ClientEndpoint(encoders = { ErrorMessageEncoder.class, AgentRegistrationEncoder.class, AgentResponseEncoder.class,
 		StartNegotiationEncoder.class }, decoders = { IncomingMessageDecoder.class })
 public class WebsocketClient {
 
