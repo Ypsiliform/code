@@ -6,7 +6,6 @@ import cas.ypsiliform.messages.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
@@ -238,8 +237,11 @@ public class Agent implements MessageHandler{
 
         //iterate all proposals and calculate the production arrays and theirs costs
         Map<Integer, Solution>  solutions = req.getSolutions();
-        for(int i=0; i < solutions.size();i++) {
-            proposal = solutions.get(i);
+        int i = 0;
+        for(Map.Entry<Integer, Solution> entry : solutions.entrySet()) {
+            proposal = entry.getValue();
+
+            //System.out.println("solution: " + proposal.toString());
 
             //store the calculated array
             productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
@@ -254,6 +256,7 @@ public class Agent implements MessageHandler{
                 best_solution_costs = cost;
                 res.setSelection(i);
             }
+            i++;
         }
 
         return res;

@@ -2,10 +2,13 @@ package cas.ypsiliform.agent.test;
 
 import cas.ypsiliform.messages.AgentResponse;
 import cas.ypsiliform.messages.MediatorRequest;
+import cas.ypsiliform.messages.Solution;
 import org.junit.Test;
 import cas.ypsiliform.agent.Agent;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -131,17 +134,75 @@ public class AgentTest {
 
     }
 
-    /*
+
     @Test
     public void handleMediatorRequest() {
+        //create the AgentTestHelper
+        double setupCosts = 10;
+        double storageCosts = 0.5;
+        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+
+        //define the demands, production restrictions and expected results
+        Integer demands[]               = {0, 0, 100, 100, 50};
+        boolean productionDays_1[]      = {true, true, false, true, false};
+        boolean productionDays_2[]      = {true, true, true, true, true};
+        boolean productionDays_3[]      = {true, false, false, false, false};
+        boolean productionDays_4[]      = {true, false, false, true, false};
+        Integer expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
+        Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
+        Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
+        Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+
+        //Create 4 solutions that should be put into the MediatorRequest
+        Solution solution_1 = new Solution();
+        Solution solution_2 = new Solution();
+        Solution solution_3 = new Solution();
+        Solution solution_4 = new Solution();
+
+        //fill the solutions and add them
+        solution_1.setDemands(demands);
+        solution_1.setSolution(productionDays_1);
+        solution_2.setDemands(demands);
+        solution_2.setSolution(productionDays_2);
+        solution_3.setDemands(demands);
+        solution_3.setSolution(productionDays_3);
+        solution_4.setDemands(demands);
+        solution_4.setSolution(productionDays_4);
+
+        Map<Integer, Solution> allSolutions = new HashMap<>();
+        allSolutions.put(0, solution_1);
+        allSolutions.put(1, solution_2);
+        allSolutions.put(2, solution_3);
+        allSolutions.put(3, solution_4);
 
         //build the Mediatorrequest object
         MediatorRequest req = new MediatorRequest();
-        req.setSolutions();
+        req.setSolutions(allSolutions);
 
-        //build the expected answer
+        //build the expected answers
+        Map<Integer, Integer[]> allNewDemands = new HashMap<>();
+        allNewDemands.put(0, expectedProduction_1);
+        allNewDemands.put(1, expectedProduction_2);
+        allNewDemands.put(2, expectedProduction_3);
+        allNewDemands.put(3, expectedProduction_4);
+
+        //calculate the expected costs
+        Map<Integer, Double> allCosts = new HashMap<>();
+        allCosts.put(0, agent.getProductionCosts(expectedProduction_1, demands));
+        allCosts.put(1, agent.getProductionCosts(expectedProduction_2, demands));
+        allCosts.put(2, agent.getProductionCosts(expectedProduction_3, demands));
+        allCosts.put(3, agent.getProductionCosts(expectedProduction_4, demands));
+
+        //build the response agent
         AgentResponse res = new AgentResponse();
-        res
+        res.setDemands(allNewDemands);
+        res.setCosts(allCosts);
+        res.setSelection(1);
+
+        //get the response from the function
+        AgentResponse gen_res = agent.handleMediatorRequest(req);
+
+        assertEquals(res, gen_res);
     }
-    */
+
 }
