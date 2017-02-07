@@ -11,7 +11,7 @@ public class AgentRegistration
     private int id;
     private String config;
     private List<Integer> requires = new ArrayList<>();
-    private int[] demand = new int[0];
+    private Integer[] demand = new Integer[0];
 
     public int getId()
     {
@@ -43,12 +43,12 @@ public class AgentRegistration
         this.requires = requires;
     }
 
-    public int[] getDemand()
+    public Integer[] getDemand()
     {
         return demand;
     }
 
-    public void setDemand(int[] demand)
+    public void setDemand(Integer[] demand)
     {
         this.demand = demand;
     }

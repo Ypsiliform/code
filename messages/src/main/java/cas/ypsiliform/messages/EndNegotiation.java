@@ -1,19 +1,17 @@
 package cas.ypsiliform.messages;
 
-import java.util.Arrays;
-
 public class EndNegotiation
     extends AbstractMessage
 {
 
-    private boolean[] solution;
+    private Solution solution;
 
-    public boolean[] getSolution()
+    public Solution getSolution()
     {
         return solution;
     }
 
-    public void setSolution(boolean[] solution)
+    public void setSolution(Solution solution)
     {
         this.solution = solution;
     }
@@ -23,7 +21,7 @@ public class EndNegotiation
     {
         StringBuilder builder = new StringBuilder();
         builder.append("EndNegotiation [solution=");
-        builder.append(Arrays.toString(solution));
+        builder.append(solution);
         builder.append("]");
         return builder.toString();
     }

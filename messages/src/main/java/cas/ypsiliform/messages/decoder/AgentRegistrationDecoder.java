@@ -28,7 +28,7 @@ public class AgentRegistrationDecoder
         int id = readObject.getInt("id");
         String config = readObject.getString("config");
         int[] requires = getArray(readObject.getJsonArray("requires"));
-        int[] demand = getArray(readObject.getJsonArray("demand"));
+        Integer[] demand = getIntegerArray(readObject.getJsonArray("demand"));
         List<Integer> reqList = new ArrayList<>();
         for ( int i = 0; i < requires.length; i++ )
         {
@@ -44,6 +44,16 @@ public class AgentRegistrationDecoder
     private int[] getArray(JsonArray jsonArray)
     {
         int[] array = new int[jsonArray.size()];
+        for ( int i = 0; i < jsonArray.size(); i++ )
+        {
+            array[i] = jsonArray.getInt(i);
+        }
+        return array;
+    }
+
+    private Integer[] getIntegerArray(JsonArray jsonArray)
+    {
+        Integer[] array = new Integer[jsonArray.size()];
         for ( int i = 0; i < jsonArray.size(); i++ )
         {
             array[i] = jsonArray.getInt(i);

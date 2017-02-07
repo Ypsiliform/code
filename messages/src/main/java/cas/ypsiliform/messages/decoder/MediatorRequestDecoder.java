@@ -59,9 +59,9 @@ public class MediatorRequestDecoder
         return map;
     }
 
-    private int[] getArray(JsonArray jsonArray)
+    private Integer[] getArray(JsonArray jsonArray)
     {
-        int[] array = new int[jsonArray.size()];
+        Integer[] array = new Integer[jsonArray.size()];
         for ( int i = 0; i < jsonArray.size(); i++ )
         {
             array[i] = jsonArray.getInt(i);

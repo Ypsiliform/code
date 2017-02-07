@@ -9,7 +9,7 @@ public class Solution
 {
 
     private boolean[] solution;
-    private int[] demands;
+    private Integer[] demands;
 
     public boolean[] getSolution()
     {
@@ -21,12 +21,12 @@ public class Solution
         this.solution = solution;
     }
 
-    public int[] getDemands()
+    public Integer[] getDemands()
     {
         return demands;
     }
 
-    public void setDemands(int[] demands)
+    public void setDemands(Integer[] demands)
     {
         this.demands = demands;
     }

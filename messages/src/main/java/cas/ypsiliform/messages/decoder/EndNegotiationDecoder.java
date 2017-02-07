@@ -11,6 +11,7 @@ import javax.websocket.Decoder;
 import javax.websocket.EndpointConfig;
 
 import cas.ypsiliform.messages.EndNegotiation;
+import cas.ypsiliform.messages.Solution;
 
 public class EndNegotiationDecoder
     implements Decoder.Text<EndNegotiation>
@@ -36,11 +37,20 @@ public class EndNegotiationDecoder
         JsonReader reader = Json.createReader(new StringReader(s));
         JsonObject readObject = reader.readObject();
         JsonArray array = readObject.getJsonArray("solution");
-        boolean[] solution = new boolean[array.size()];
+        JsonArray demand = readObject.getJsonArray("demands");
+        Solution solution = new Solution();
+        boolean[] solArray = new boolean[array.size()];
         for ( int i = 0; i < array.size(); i++ )
         {
-            solution[i] = array.getBoolean(i);
+            solArray[i] = array.getBoolean(i);
         }
+        Integer[] demArray = new Integer[demand.size()];
+        for ( int i = 0; i < demand.size(); i++ )
+        {
+            demArray[i] = demand.getInt(i);
+        }
+        solution.setSolution(solArray);
+        solution.setDemands(demArray);
         msg.setSolution(solution);
         return msg;
     }
