@@ -21,7 +21,7 @@ public class AgentTest {
             super(setupCost,storageCost, productionLimit, children);
         }
 
-        public int[] getProductionArray(int[] demands, boolean[] productionDays) {
+        public Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
             return super.getProductionArray(demands, productionDays);
         }
 
@@ -29,7 +29,7 @@ public class AgentTest {
             return super.getInitCosts(items);
         }
 
-        public double getProductionCosts(int[] production, int[] demands) {
+        public double getProductionCosts(Integer[] production, Integer[] demands) {
             return super.getProductionCosts(production, demands);
         }
 
@@ -43,19 +43,19 @@ public class AgentTest {
         AgentTestHelper agent = new AgentTestHelper(10.0,0.5,70,new ArrayList<Integer>(2));
 
         //set the init values for testing
-        int demands_1[]             = {0, 0, 100, 100, 50};
+        Integer demands_1[]             = {0, 0, 100, 100, 50};
 
         boolean productionDays_1[]  = {true, true, false, true, false};
-        int expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
+        Integer expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
 
         boolean productionDays_2[]  = {true, true, true, true, true};
-        int expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
+        Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
 
         boolean productionDays_3[]  = {true, false, false, false, false};
-        int expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
+        Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
 
         boolean productionDays_4[]  = {true, false, false, true, false};
-        int expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+        Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
 
         assertArrayEquals(expectedProduction_1, agent.getProductionArray(demands_1, productionDays_1));
         assertArrayEquals(expectedProduction_2, agent.getProductionArray(demands_1, productionDays_2));
@@ -93,11 +93,11 @@ public class AgentTest {
         double expectedCosts;
         double setupCosts = 10;
         double storageCosts = 0.5;
-        int demands[] = {0, 0, 100, 100, 50};
-        int expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
-        int expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
-        int expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
-        int expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+        Integer demands[] = {0, 0, 100, 100, 50};
+        Integer expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
+        Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
+        Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
+        Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
         AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
 
         expectedCosts = agent.getInitCosts(40)

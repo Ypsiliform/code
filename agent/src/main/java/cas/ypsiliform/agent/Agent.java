@@ -80,7 +80,6 @@ public class Agent implements MessageHandler{
             initCosts = 0;
         } else {
             //calculate the number of production days
-            productionDays = 1;
             productionDays = items / this.productionLimit;
             if(items % this.productionLimit != 0)
                 productionDays++;
@@ -104,7 +103,7 @@ public class Agent implements MessageHandler{
      * @param production plan that contains data when and how many items are built
      * @param demands Contains the details of how many items can be retreived in a period
      * */
-    protected double getProductionCosts(int[] production, int[] demands) {
+    protected double getProductionCosts(Integer[] production, Integer[] demands) {
         double costs = getInitCosts(production[0]);
         int itemsInStore = production[0];
 
@@ -133,8 +132,9 @@ public class Agent implements MessageHandler{
      * @param productionDays boolean array that defines on which periods it is allowed to produce something
      * @return and int[] that contains the created mapping of production periods
      * */
-    protected int[] getProductionArray(int[] demands, boolean[] productionDays) {
-        int production_array[] = new int[demands.length + 1];
+    protected Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
+        Integer production_array[] = new Integer[demands.length + 1];
+        Arrays.fill(production_array, new Integer(0));
         int singleDemand;
         int remainingCapacity;
 
@@ -227,7 +227,7 @@ public class Agent implements MessageHandler{
      * */
     protected AgentResponse handleMediatorRequest(MediatorRequest req) {
         Solution proposal;
-        int[] productionArray;
+        Integer[] productionArray;
         double cost;
         double best_solution_costs = 0;
 
@@ -243,8 +243,7 @@ public class Agent implements MessageHandler{
 
             //store the calculated array
             productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
-            Integer[] convertedArray = Arrays.stream(productionArray).boxed().toArray(Integer[]::new);
-            productionArrays.put(i, convertedArray);
+            productionArrays.put(i, productionArray);
 
             //store the calculated costs
             cost = getProductionCosts(productionArray, proposal.getDemands());
