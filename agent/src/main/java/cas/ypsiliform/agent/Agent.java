@@ -76,8 +76,9 @@ public class Agent {
             initCosts = 0;
         } else {
             //calculate the number of production days
+            productionDays = 1;
             productionDays = items / this.productionLimit;
-            if(items % productionDays != 0)
+            if(items % this.productionLimit != 0)
                 productionDays++;
 
             //sum up the setup costs
@@ -88,7 +89,7 @@ public class Agent {
             do {
                 initCosts += stored_items * this.storageCost;
                 stored_items += this.productionLimit;
-            } while(stored_items < items);
+            } while(stored_items <= items);
         }
 
         return initCosts;
@@ -120,7 +121,10 @@ public class Agent {
 
 
     /**
-     * Creates the production array that is ideal for the prodvided production days
+     * Creates the production array that is ideal for the prodvided production days.
+     * Assumes that storage costs far outweigh the setupcosts. Otherwise in some cases
+     * it would not make sense to produce each day, but instead use the full capacity and
+     * store some items.
      * @param demands This array contains the demands per days
      * @param productionDays boolean array that defines on which periods it is allowed to produce something
      * @return and int[] that contains the created mapping of production periods

@@ -57,23 +57,72 @@ public class AgentTest {
         assertArrayEquals(expectedProduction_4, agent.getProductionArray(demands_1, productionDays_4));
     }
 
-    /*
+
     @Test
     public void getInitCosts() throws Exception {
-        int expectedProduction[] = {40, 70, 70, 0, 70, 0};
-        int demand[] = {0, 0, 100, 100, 50};
-        boolean productionDays[] = {true, true, false, true, false};
-        AgentTestHelper agent = new AgentTestHelper(10.0,0.5,70,new ArrayList<Integer>(2));
-        assertArrayEquals(expectedProduction, agent.getProductionArray(demand, productionDays));
+        double setupCosts = 10;
+        double storageCosts = 0.5;
+        double expectedCosts = 0;
+        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+
+        //check that  0 is caught
+        assertEquals(expectedCosts, agent.getInitCosts(0), 0);
+
+        //easy test, just one day
+        expectedCosts = setupCosts + 10*storageCosts;
+        assertEquals(expectedCosts, agent.getInitCosts(10), 0);
+
+        //just one day production, result not an int
+        expectedCosts = setupCosts + 15 * storageCosts;
+        assertEquals(expectedCosts, agent.getInitCosts(15), 0);
+
+        //complex test, 3 days of producing and storing goods
+        expectedCosts = 3*setupCosts + 10 * storageCosts + 80 * storageCosts + 150 * storageCosts;
+        assertEquals(expectedCosts,agent.getInitCosts(150), 0);
     }
+
 
     @Test
     public void getProductionCosts() throws Exception {
-        int expectedProduction[] = {40, 70, 70, 0, 70, 0};
-        int demand[] = {0, 0, 100, 100, 50};
-        boolean productionDays[] = {true, true, false, true, false};
-        AgentTestHelper agent = new AgentTestHelper(10.0,0.5,70,new ArrayList<Integer>(2));
-        assertArrayEquals(expectedProduction, agent.getProductionArray(demand, productionDays));
+        double expectedCosts;
+        double setupCosts = 10;
+        double storageCosts = 0.5;
+        int demands[] = {0, 0, 100, 100, 50};
+        int expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
+        int expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
+        int expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
+        int expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+
+        expectedCosts = agent.getInitCosts(40)
+                + 3 * setupCosts
+                + 110 * storageCosts
+                + 180 * storageCosts
+                + 80 * storageCosts
+                + 50 * storageCosts;
+        assertEquals(expectedCosts, agent.getProductionCosts(expectedProduction_1, demands), 0);
+
+        expectedCosts = 4 * setupCosts
+                + 60 * storageCosts
+                + 30 * storageCosts;
+        assertEquals(expectedCosts, agent.getProductionCosts(expectedProduction_2, demands), 0);
+
+        expectedCosts = agent.getInitCosts(180)
+                + setupCosts
+                + 250 * storageCosts
+                + 250 * storageCosts
+                + 150 * storageCosts
+                + 50 * storageCosts;
+        assertEquals(expectedCosts, agent.getProductionCosts(expectedProduction_3, demands), 0);
+
+        expectedCosts = agent.getInitCosts(110)
+                + 2 * setupCosts
+                + 180 * storageCosts
+                + 180 * storageCosts
+                + 80 * storageCosts
+                + 50 * storageCosts;
+        assertEquals(expectedCosts, agent.getProductionCosts(expectedProduction_4, demands), 0);
+
     }
-    */
+
 }
