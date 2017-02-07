@@ -1,5 +1,7 @@
 package cas.ypsiliform.agent.test;
 
+import cas.ypsiliform.messages.AgentResponse;
+import cas.ypsiliform.messages.MediatorRequest;
 import org.junit.Test;
 import cas.ypsiliform.agent.Agent;
 
@@ -27,8 +29,12 @@ public class AgentTest {
             return super.getInitCosts(items);
         }
 
-        protected double getProductionCosts(int[] production, int[] demands) {
+        public double getProductionCosts(int[] production, int[] demands) {
             return super.getProductionCosts(production, demands);
+        }
+
+        public AgentResponse handleMediatorRequest(MediatorRequest req) {
+            return super.handleMediatorRequest(req);
         }
     }
 
@@ -125,4 +131,17 @@ public class AgentTest {
 
     }
 
+    /*
+    @Test
+    public void handleMediatorRequest() {
+
+        //build the Mediatorrequest object
+        MediatorRequest req = new MediatorRequest();
+        req.setSolutions();
+
+        //build the expected answer
+        AgentResponse res = new AgentResponse();
+        res
+    }
+    */
 }

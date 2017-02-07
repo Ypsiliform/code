@@ -8,6 +8,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 /**
@@ -194,11 +195,21 @@ public class Agent implements MessageHandler{
     }
 
     @Override
+    /**
+     * Provides message handling capabilities to the agent. So far these messages are supported:
+     * MediatorRequest:  agent calculates answer and sends it back
+     * EndOfNegotiation: agent simple prints its result for debugging purposes
+     * ErrorMessage:     agent prints the error
+     * All other message types also cause printing of an error
+     *
+     * @param message    Incoming message that needs handling
+     * */
     public void onNewMessage(AbstractMessage message) {
 
         //depending on the messagetype, call the corresponding messagehandler
         if(message instanceof MediatorRequest) {
-            handleMediatorRequest((MediatorRequest) message);
+            AgentResponse res = handleMediatorRequest((MediatorRequest) message);
+            this.client.sendMessage(res);
         } else if (message instanceof EndNegotiation) {
             handleEndNegotiation((EndNegotiation) message);
         } else if (message instanceof ErrorMessage) {
@@ -208,6 +219,12 @@ public class Agent implements MessageHandler{
         }
     }
 
+    /**
+     * Handles the MedaitorRequest mesage by calculating the production arrays based on the demand
+     * and the provided solution of the mediator.
+     * @param req MediatorRequest containing the demands and solutions
+     * @return AgentResponse object containing the production arrays, costs and selection
+     * */
     protected AgentResponse handleMediatorRequest(MediatorRequest req) {
         Solution proposal;
         int[] productionArray;
@@ -226,12 +243,14 @@ public class Agent implements MessageHandler{
 
             //store the calculated array
             productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
+            Integer[] convertedArray = Arrays.stream(productionArray).boxed().toArray(Integer[]::new);
+            productionArrays.put(i, convertedArray);
 
             //store the calculated costs
             cost = getProductionCosts(productionArray, proposal.getDemands());
             costs.put(i, cost);
 
-            //update the selected solution, if it is better
+            //update the selected solution if possible
             if(best_solution_costs == 0 || cost < best_solution_costs){
                 best_solution_costs = cost;
                 res.setSelection(i);
