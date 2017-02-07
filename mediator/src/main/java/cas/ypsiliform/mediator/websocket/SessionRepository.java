@@ -8,4 +8,6 @@ public interface SessionRepository
 
     void removeSession(String id);
 
+    void onNewAgentRegistration(NewMessageEvent event);
+
 }

@@ -29,6 +29,7 @@ public class AgentRegistrationBean
     private Map<String, Map<Integer, AgentData>> configAgentMap =
         new HashMap<>();
 
+    @Override
     @Asynchronous
     public void onNewAgentRegistration(@Observes NewMessageEvent event)
     {
@@ -109,13 +110,23 @@ public class AgentRegistrationBean
     @Override
     public void removeSession(String id)
     {
+        List<AgentData> toRemove = new ArrayList<>();
         configAgentMap.entrySet().forEach(entry -> {
             List<AgentData> result = entry.getValue()
                 .values()
                 .stream()
                 .filter(p -> p.getSession().getId().equals(id))
                 .collect(Collectors.toList());
-
+            toRemove.addAll(result);
+        });
+        toRemove.forEach(a -> {
+            Map<Integer, AgentData> map = configAgentMap.get(a.getConfig());
+            map.remove(a.getId());
+            if ( map.isEmpty() )
+            {
+                configAgentMap.remove(a.getConfig());
+            }
+            //TODO: agent wrapper informieren das Agent gelöscht worden ist
         });
     }
 
