@@ -15,6 +15,21 @@ public class AgentProxy {
 	public void removeAgentDeadListener(AgentDeadListener listener) {
 		listeners.remove(listener);
 	}
+	
+	public int getId() {
+		// TODO implementation missing
+		throw new UnsupportedOperationException();
+	}
+	
+	public int getParentId() {
+		// TODO implementation missing
+		throw new UnsupportedOperationException();
+	}
+	
+	public Iterable<Integer> getChildIds() {
+		// TODO implementation missing
+		throw new UnsupportedOperationException();
+	}
 
 	public Thenable<AgentResponse> sendSolutionProposal(SolutionProposal solution) {
 		// TODO implementation missing
