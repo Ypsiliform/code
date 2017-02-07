@@ -19,11 +19,11 @@ public class AgentData
     private String config;
     private List<AgentData> childAgents = new ArrayList<>();
     private AgentData parentAgent;
-    private int[] initialDemand;
+    private Integer[] initialDemand;
 
     public AgentData(int id,
                      String config,
-                     int[] initialDemand,
+                     Integer[] initialDemand,
                      Session session)
     {
         this.id = id;
@@ -57,7 +57,7 @@ public class AgentData
         return config;
     }
 
-    public int[] getInitialDemand()
+    public Integer[] getInitialDemand()
     {
         return initialDemand;
     }
