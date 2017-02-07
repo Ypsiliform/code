@@ -8,8 +8,10 @@ public class AgentResponse
 {
 
     private int selection;
+    // first int is the ID of the solution, demands contains the calculated production array to the propsed solution
     private Map<Integer, Integer[]> demands = new HashMap<>();
-    private int cost;
+    // first int is the ID of the solution, cost is the cost of the solution
+    private Map<Integer, Double> costs = new HashMap<>();
 
     public int getSelection()
     {
@@ -31,14 +33,12 @@ public class AgentResponse
         this.demands = demands;
     }
 
-    public int getCost()
-    {
-        return cost;
+    public Map<Integer, Double> getCosts() {
+        return costs;
     }
 
-    public void setCost(int cost)
-    {
-        this.cost = cost;
+    public void setCosts(Map<Integer, Double> costs) {
+        this.costs = costs;
     }
 
     @Override
@@ -50,7 +50,7 @@ public class AgentResponse
         builder.append(", demands=");
         builder.append(demands);
         builder.append(", cost=");
-        builder.append(cost);
+        builder.append(costs);
         builder.append("]");
         return builder.toString();
     }

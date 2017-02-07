@@ -1,5 +1,6 @@
 package cas.ypsiliform.messages.encoder;
 
+import java.util.Iterator;
 import java.util.Map;
 
 import javax.json.Json;
@@ -36,8 +37,8 @@ public class AgentResponseEncoder
             JsonObjectBuilder builder = Json.createObjectBuilder();
             builder.add("type", "agentresponse");
             builder.add("selection", object.getSelection());
-            builder.add("cost", object.getCost());
-            builder.add("demands", buildMap(object.getDemands()));
+            builder.add("costs", buildDoubleArray(object.getCosts()));
+            builder.add("demands", buildIntegerArrayMap(object.getDemands()));
             return builder.build().toString();
         }
         catch ( Exception e )
@@ -46,7 +47,7 @@ public class AgentResponseEncoder
         }
     }
 
-    private JsonArrayBuilder buildMap(Map<Integer, Integer[]> demands)
+    private JsonArrayBuilder buildIntegerArrayMap(Map<Integer, Integer[]> demands)
     {
         JsonArrayBuilder array = Json.createArrayBuilder();
         demands.entrySet().forEach((entry) -> {
@@ -62,5 +63,15 @@ public class AgentResponseEncoder
         });
         return array;
     }
+
+    private JsonArrayBuilder buildDoubleArray(Map<Integer, Double> costs)
+    {
+        JsonArrayBuilder array = Json.createArrayBuilder();
+        for(Map.Entry<Integer, Double> entry : costs.entrySet()) {
+            array.add(entry.getValue());
+        }
+        return array;
+    }
+
 
 }

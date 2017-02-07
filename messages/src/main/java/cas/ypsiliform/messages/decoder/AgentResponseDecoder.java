@@ -35,10 +35,11 @@ public class AgentResponseDecoder
         JsonReader reader = Json.createReader(new StringReader(s));
         JsonObject readObject = reader.readObject();
         int selection = readObject.getInt("selection");
-        int cost = readObject.getInt("cost");
+        Map<Integer, Double> costs =
+                getCosts(readObject.getJsonArray("costs"));
         Map<Integer, Integer[]> demands =
             getMap(readObject.getJsonArray("demands"));
-        msg.setCost(cost);
+        msg.setCosts(costs);
         msg.setDemands(demands);
         msg.setSelection(selection);
         return msg;
@@ -60,6 +61,15 @@ public class AgentResponseDecoder
         }
         return map;
     }
+
+    private Map<Integer, Double> getCosts(JsonArray jsonArray) {
+        Map<Integer, Double> map = new HashMap<>();
+        for(int i=0; i< jsonArray.size();i++) {
+            map.put(i, jsonArray.getJsonNumber(i).doubleValue());
+        }
+        return map;
+    }
+
 
     public boolean willDecode(String s)
     {
