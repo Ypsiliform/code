@@ -16,7 +16,6 @@ import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
 import cas.ypsiliform.messages.AbstractMessage;
-import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.decoder.IncomingMessageDecoder;
 import cas.ypsiliform.messages.encoder.EndNegotiationEncoder;
 import cas.ypsiliform.messages.encoder.ErrorMessageEncoder;
@@ -35,7 +34,7 @@ public class MediatorWebsocket
     private SessionRepository repo;
 
     @Inject
-    private Event<AbstractMessage> event;
+    private Event<NewMessageEvent> event;
 
     @PostConstruct
     public void lookup()
@@ -57,7 +56,7 @@ public class MediatorWebsocket
     public void onOpen(Session session)
     {
         LOGGER.severe("new session " + session);
-        repo.addSession(session);
+//        repo.addSession(session); 
     }
 
     @OnMessage
@@ -65,22 +64,21 @@ public class MediatorWebsocket
     {
         LOGGER.severe("new message received : " + receivedMsg + " session = "
             + session);
-        EndNegotiation data = new EndNegotiation();
-        data.setSolution(new boolean[] { true, false, true, false, true, false,
-            true, false, true, false, true, false });
-        session.getAsyncRemote().sendObject(data);
-        event.fire(receivedMsg);
+        event.fire(new NewMessageEvent(session, receivedMsg));
     }
 
     @OnClose
     public void onClose(Session session)
     {
+        LOGGER.severe("session closed = " + session.getId());
         repo.removeSession(session.getId());
     }
 
     @OnError
     public void onError(Session session, Throwable thrownable)
     {
+        LOGGER.severe("session = " + session.getId() + " on error = "
+            + thrownable.getMessage());
         repo.removeSession(session.getId());
     }
 
