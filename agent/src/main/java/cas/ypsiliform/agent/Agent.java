@@ -1,18 +1,26 @@
 package cas.ypsiliform.agent;
 
+import cas.ypsiliform.agent.websocket.MessageHandler;
+import cas.ypsiliform.agent.websocket.WebsocketClient;
+import cas.ypsiliform.messages.*;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Array;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * Created by paul on 06.02.17.
  */
 
-public class Agent {
+public class Agent implements MessageHandler{
 
     private double setupCost;
     private double storageCost;
     private int productionLimit;
     private ArrayList<Integer> children;
+    private WebsocketClient client;
 
     /**
      * Agent constructor to initialize an agent
@@ -54,11 +62,6 @@ public class Agent {
 
     public void setProductionLimit(int productionLimit) {
         this.productionLimit = productionLimit;
-    }
-
-
-    private int startWebsocket() {
-        return 0;
     }
 
     /**
@@ -168,4 +171,83 @@ public class Agent {
 
         return production_array;
     }
+
+
+    /**
+     * Creates a websocket and connects it to the provided URI.
+     * @param websocketAddr URI of the websocket
+     * @return 0 if successful
+     * */
+    private int createWebsocket(URI websocketAddr) {
+        URI url = websocketAddr;
+        if(websocketAddr == null) {
+            try {
+                url = new URI("ws://localhost:8080/mediator/mediator");
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+                return -1;
+            }
+        }
+
+        this.client = new WebsocketClient(url);
+        return 0;
+    }
+
+    @Override
+    public void onNewMessage(AbstractMessage message) {
+
+        //depending on the messagetype, call the corresponding messagehandler
+        if(message instanceof MediatorRequest) {
+            handleMediatorRequest((MediatorRequest) message);
+        } else if (message instanceof EndNegotiation) {
+            handleEndNegotiation((EndNegotiation) message);
+        } else if (message instanceof ErrorMessage) {
+            handleErrorMessage((ErrorMessage) message);
+        } else {
+            System.out.println("Unknown message " + message.toString());
+        }
+    }
+
+    protected AgentResponse handleMediatorRequest(MediatorRequest req) {
+        Solution proposal;
+        int[] productionArray;
+        double cost;
+        double best_solution_costs = 0;
+
+        //create the AgentResponse object
+        AgentResponse res = new AgentResponse();
+        Map<Integer, Double>    costs = res.getCosts();
+        Map<Integer, Integer[]> productionArrays = res.getDemands();
+
+        //iterate all proposals and calculate the production arrays and theirs costs
+        Map<Integer, Solution>  solutions = req.getSolutions();
+        for(int i=0; i < solutions.size();i++) {
+            proposal = solutions.get(i);
+
+            //store the calculated array
+            productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
+
+            //store the calculated costs
+            cost = getProductionCosts(productionArray, proposal.getDemands());
+            costs.put(i, cost);
+
+            //update the selected solution, if it is better
+            if(best_solution_costs == 0 || cost < best_solution_costs){
+                best_solution_costs = cost;
+                res.setSelection(i);
+            }
+        }
+
+        return res;
+    }
+
+    protected int handleEndNegotiation(EndNegotiation msg) {
+        return 0;
+    }
+
+    protected int handleErrorMessage(ErrorMessage errmsg) {
+        System.out.println("Received Error Message: " + errmsg.toString());
+        return 0;
+    }
+
 }

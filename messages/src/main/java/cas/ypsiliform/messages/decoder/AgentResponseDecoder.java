@@ -35,7 +35,7 @@ public class AgentResponseDecoder
         JsonReader reader = Json.createReader(new StringReader(s));
         JsonObject readObject = reader.readObject();
         int selection = readObject.getInt("selection");
-        int cost = readObject.getInt("cost");
+        double cost = readObject.getJsonNumber("cost").doubleValue();
         Map<Integer, Integer[]> demands =
             getMap(readObject.getJsonArray("demands"));
         msg.setCost(cost);
