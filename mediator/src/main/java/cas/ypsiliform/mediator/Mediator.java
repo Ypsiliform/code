@@ -59,7 +59,7 @@ public class Mediator implements Runnable {
 	public void run() {
 		log.info("Starting new negotiation with " + agents.size() + " agents");
 
-		List<SolutionProposal> solutions = Collections.EMPTY_LIST;
+		List<SolutionProposal> solutions = new ArrayList<SolutionProposal>();
 		solutions.add(new SolutionProposal(Constants.Encoding.NUMBER_OF_PERIODS));
 
 		for (int i = 0; i < Constants.Negotiation.NUMBER_OF_ROUNDS; i++) {
@@ -220,13 +220,24 @@ public class Mediator implements Runnable {
 		return result;
 	}
 
+	/**
+	 * Recursively traverse the supply chain one last time to gather the
+	 * secondary demands of all agents for the next level and then end the
+	 * negotiation for the current agent.
+	 * 
+	 * @param current
+	 *            Current agent to communicate with. Will propagate the current
+	 *            agent's demands to the next level
+	 * @param chosenSolution
+	 *            The solution that is to be communicated to all agents
+	 */
 	private Thenable<Void> endNegotiationRecursive(AgentProxy current, Proposal chosenSolution) {
 		List<Thenable> runningMessages = new ArrayList<Thenable>();
 
 		// map view on bit string and primary secondary/secondary demands from
 		// previous agent into message
-		
-		Map<Integer, Proposal> proposalMap = Collections.emptyMap();
+
+		Map<Integer, Proposal> proposalMap = new HashMap<Integer, Proposal>();
 		proposalMap.put(1, chosenSolution);
 		MediatorRequest request = getMediatorRequestMessage(current.getId(), proposalMap);
 
