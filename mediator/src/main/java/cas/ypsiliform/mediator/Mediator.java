@@ -13,6 +13,7 @@ import cas.ypsiliform.mediator.async.Function;
 import cas.ypsiliform.mediator.async.Thenable;
 import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.negotiation.SolutionProposal;
+import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.MediatorRequest;
 import cas.ypsiliform.messages.Solution;
 
@@ -102,13 +103,15 @@ public class Mediator implements Runnable {
 			});
 		}
 
-		log.info("Negotiation ended");
 		SolutionProposal chosenSolution = solutions.get(0);
 		log.info("Chosen solution: " + chosenSolution.toString());
 
-		agents.forEach((id, agent) -> {
-			agent.endNegotiation(chosenSolution);
-		});
+		endNegotiationRecursive(agents.get(1), new Proposal(chosenSolution, primaryDemands))
+				.wait(Constants.Negotiation.TIMEOUT_PER_ROUND_MS, r -> {
+					log.warning("Results communication timed out");
+					return;
+				});
+		log.info("Negotiation ended");
 	}
 
 	/**
@@ -167,19 +170,7 @@ public class Mediator implements Runnable {
 		// stupid Java, fooled so easily
 		Integer[] currentAgentPreference = { 0 };
 
-		// map view on bit string and primary secondary/secondary demands from
-		// previous agent into message
-		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
-
-		proposals.forEach((pos, proposal) -> {
-			Solution sol = new Solution();
-			sol.setSolution(proposal.solution.sliceForAgent(pos));
-			sol.setDemands(proposal.demands);
-			solutionsMap.put(pos, sol);
-		});
-
-		MediatorRequest request = new MediatorRequest();
-		request.setSolutions(solutionsMap);
+		MediatorRequest request = getMediatorRequestMessage(current.getId(), proposals);
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
@@ -189,7 +180,7 @@ public class Mediator implements Runnable {
 
 			log.finer("Agent " + current.getId() + " prefers solution " + currentAgentPreference[0]);
 
-			assert agentDemandVariants.size() == solutionsMap
+			assert agentDemandVariants.size() == request.getSolutions()
 					.size() : "Expected to receive as many secondary demand variants from agent as were sent to it";
 
 			// prepare recursion: Get full solution proposal (not only view for
@@ -227,6 +218,73 @@ public class Mediator implements Runnable {
 		});
 
 		return result;
+	}
+
+	private Thenable<Void> endNegotiationRecursive(AgentProxy current, Proposal chosenSolution) {
+		List<Thenable> runningMessages = new ArrayList<Thenable>();
+
+		// map view on bit string and primary secondary/secondary demands from
+		// previous agent into message
+		
+		Map<Integer, Proposal> proposalMap = Collections.emptyMap();
+		proposalMap.put(1, chosenSolution);
+		MediatorRequest request = getMediatorRequestMessage(current.getId(), proposalMap);
+
+		// send message to current agent asynchronously
+		current.sendSolutionProposals(request).then(response -> {
+			// store and validate response
+			Map<Integer, Integer[]> agentDemandVariants = response.getDemands();
+
+			assert agentDemandVariants
+					.size() == 1 : "Expected to receive as many secondary demand variants from agent as were sent to it";
+
+			// prepare recursion: Get full solution (not only view for previous
+			// agent) and secondary demands
+
+			Integer[] demandVariant = agentDemandVariants.get(0);
+			assert demandVariant.length == Constants.Encoding.NUMBER_OF_PERIODS : "Number of secondary demands should equal number of periods";
+
+			Proposal nextIterationSolution = new Proposal(chosenSolution.solution, demandVariant);
+
+			// send solution + secondary demands of current agent to all
+			// children
+			current.getChildIds().forEach(childId -> {
+				log.finer("Asking agent " + childId);
+				runningMessages.add(endNegotiationRecursive(agents.get(childId), nextIterationSolution));
+			});
+
+			// confirm solution to current agent
+			EndNegotiation message = new EndNegotiation();
+			message.setSolution(request.getSolutions().get(1));
+			runningMessages.add(current.endNegotiation(message));
+		});
+
+		Thenable<Void> result = new Thenable<Void>();
+		Thenable.whenAll(runningMessages).then(r -> {
+			result.resolve(null);
+		});
+		return result;
+	}
+
+	private MediatorRequest getMediatorRequestMessage(int agentId, Map<Integer, Proposal> proposals) {
+		// map view on bit string and primary secondary/secondary demands from
+		// previous agent into message
+		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
+
+		proposals.forEach((pos, proposal) -> {
+			solutionsMap.put(pos, getSolutionMessage(agentId, proposal));
+		});
+
+		MediatorRequest request = new MediatorRequest();
+		request.setSolutions(solutionsMap);
+		return request;
+	}
+
+	private Solution getSolutionMessage(int agentId, Proposal proposal) {
+		Solution sol = new Solution();
+		sol.setSolution(proposal.solution.sliceForAgent(agentId - 1));
+		sol.setDemands(proposal.demands);
+		return sol;
 	}
 
 	private void registerAgentDeadListener(Collection<AgentProxy> agents) {
