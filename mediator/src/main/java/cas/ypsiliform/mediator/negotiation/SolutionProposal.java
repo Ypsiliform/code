@@ -114,4 +114,18 @@ public class SolutionProposal {
 			return super.equals(obj);
 		}
 	}
+	
+	@Override
+	public String toString() {
+		StringBuffer string = new StringBuffer();
+		
+		for (int i = 0; i < bitString.length; i++) {
+			if (bitString[i])
+				string.append("1");
+			else
+				string.append("0");
+		}
+		
+		return string.toString();
+	}
 }

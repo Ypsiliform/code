@@ -15,6 +15,8 @@ import java.util.TimerTask;
  */
 public class Thenable<T> {
     private static Timer timeout = new Timer(true);
+    private Object waitHandle = new Object();
+    
     private LinkedList<Action<T>> actions = new LinkedList<Action<T>>();
     private T resolve;
     private boolean resolved = false;
@@ -78,6 +80,7 @@ public class Thenable<T> {
 
         resolve = data;
         resolved = true;
+        waitHandle.notify();
     }
 
     /**
@@ -149,5 +152,17 @@ public class Thenable<T> {
         }, timeoutMillis);
 
         return this;
+    }
+    
+    public void wait(int timeoutMillis, Action<Void> timeoutAction) {
+    	try {
+			waitHandle.wait(timeoutMillis);
+		} catch (InterruptedException e) {
+			// return before timeout;
+			return;
+		}
+    	
+    	// timed out
+    	timeoutAction.perform(null);
     }
 }
