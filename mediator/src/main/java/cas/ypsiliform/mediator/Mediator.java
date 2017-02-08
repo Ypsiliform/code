@@ -170,16 +170,7 @@ public class Mediator implements Runnable {
 		// stupid Java, fooled so easily
 		Integer[] currentAgentPreference = { 0 };
 
-		// map view on bit string and primary secondary/secondary demands from
-		// previous agent into message
-		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
-
-		proposals.forEach((pos, proposal) -> {
-			solutionsMap.put(pos, getSolutionMessage(current.getId(), proposal));
-		});
-
-		MediatorRequest request = new MediatorRequest();
-		request.setSolutions(solutionsMap);
+		MediatorRequest request = getMediatorRequestMessage(current.getId(), proposals);
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
@@ -189,7 +180,7 @@ public class Mediator implements Runnable {
 
 			log.finer("Agent " + current.getId() + " prefers solution " + currentAgentPreference[0]);
 
-			assert agentDemandVariants.size() == solutionsMap
+			assert agentDemandVariants.size() == request.getSolutions()
 					.size() : "Expected to receive as many secondary demand variants from agent as were sent to it";
 
 			// prepare recursion: Get full solution proposal (not only view for
@@ -229,30 +220,15 @@ public class Mediator implements Runnable {
 		return result;
 	}
 
-	private Solution getSolutionMessage(int agentId, Proposal proposal) {
-		Solution sol = new Solution();
-		sol.setSolution(proposal.solution.sliceForAgent(agentId - 1));
-		sol.setDemands(proposal.demands);
-		return sol;
-	}
-
 	private Thenable<Void> endNegotiationRecursive(AgentProxy current, Proposal chosenSolution) {
 		List<Thenable> runningMessages = new ArrayList<Thenable>();
 
-		// simple Integer is not allowed: "Local variable currentAgentPreference
-		// defined in an enclosing scope must be final or effectively final"
-		// stupid Java, fooled so easily
-		Integer[] currentAgentPreference = { 0 };
-
 		// map view on bit string and primary secondary/secondary demands from
 		// previous agent into message
-		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
-
-		Solution sol = getSolutionMessage(current.getId(), chosenSolution);
-		solutionsMap.put(1, sol);
-
-		MediatorRequest request = new MediatorRequest();
-		request.setSolutions(solutionsMap);
+		
+		Map<Integer, Proposal> proposalMap = Collections.emptyMap();
+		proposalMap.put(1, chosenSolution);
+		MediatorRequest request = getMediatorRequestMessage(current.getId(), proposalMap);
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
@@ -279,7 +255,7 @@ public class Mediator implements Runnable {
 
 			// confirm solution to current agent
 			EndNegotiation message = new EndNegotiation();
-			message.setSolution(sol);
+			message.setSolution(request.getSolutions().get(1));
 			runningMessages.add(current.endNegotiation(message));
 		});
 
@@ -288,6 +264,27 @@ public class Mediator implements Runnable {
 			result.resolve(null);
 		});
 		return result;
+	}
+
+	private MediatorRequest getMediatorRequestMessage(int agentId, Map<Integer, Proposal> proposals) {
+		// map view on bit string and primary secondary/secondary demands from
+		// previous agent into message
+		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
+
+		proposals.forEach((pos, proposal) -> {
+			solutionsMap.put(pos, getSolutionMessage(agentId, proposal));
+		});
+
+		MediatorRequest request = new MediatorRequest();
+		request.setSolutions(solutionsMap);
+		return request;
+	}
+
+	private Solution getSolutionMessage(int agentId, Proposal proposal) {
+		Solution sol = new Solution();
+		sol.setSolution(proposal.solution.sliceForAgent(agentId - 1));
+		sol.setDemands(proposal.demands);
+		return sol;
 	}
 
 	private void registerAgentDeadListener(Collection<AgentProxy> agents) {
