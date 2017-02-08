@@ -1,9 +1,5 @@
 package cas.ypsiliform.agent;
 
-import cas.ypsiliform.agent.websocket.MessageHandler;
-import cas.ypsiliform.agent.websocket.WebsocketClient;
-import cas.ypsiliform.messages.*;
-
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -11,22 +7,38 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
-public class Agent implements MessageHandler{
+import cas.ypsiliform.agent.websocket.MessageHandler;
+import cas.ypsiliform.agent.websocket.WebsocketClient;
+import cas.ypsiliform.messages.AbstractMessage;
+import cas.ypsiliform.messages.AgentRegistration;
+import cas.ypsiliform.messages.AgentResponse;
+import cas.ypsiliform.messages.EndNegotiation;
+import cas.ypsiliform.messages.ErrorMessage;
+import cas.ypsiliform.messages.MediatorRequest;
+import cas.ypsiliform.messages.Solution;
 
-    private int id;                         // ID of the agent, starting from 1
-    private double setupCost;               // costs for producing in this period
-    private double storageCost;             // costs per unit per period for storing
-    private int productionLimit;            // maximum production capacity per period
-    private Integer[] productionTarget;     // targeted outcome, only relevant for agent #1
-    private ArrayList<Integer> children;    // children of this agent in the production line
-    private URI websocketAddr;              // Address of the websocket
-    private WebsocketClient client;         // Mediator object to send data to once connected
-    private String confId;                  // ID of the configuration that is currently used
+public class Agent
+    implements MessageHandler
+{
+
+    private int id; // ID of the agent, starting from 1
+    private double setupCost; // costs for producing in this period
+    private double storageCost; // costs per unit per period for storing
+    private int productionLimit; // maximum production capacity per period
+    private Integer[] productionTarget; // targeted outcome, only relevant for agent #1
+    private ArrayList<Integer> children; // children of this agent in the production line
+    private URI websocketAddr; // Address of the websocket
+    private WebsocketClient client; // Mediator object to send data to once connected
+    private String confId; // ID of the configuration that is currently used
 
     /**
      * Minimal agent configuration for testing purposes
-     * */
-    public Agent(int id, double setupCost, double storageCost, int productionLimit) {
+     */
+    public Agent(int id,
+                 double setupCost,
+                 double storageCost,
+                 int productionLimit)
+    {
         this.id = id;
         this.storageCost = storageCost;
         this.setupCost = setupCost;
@@ -35,9 +47,16 @@ public class Agent implements MessageHandler{
 
     /**
      * Normal constructor to set all parameters
-     * */
-    public Agent(int id, double setupCost, double storageCost, int productionLimit,
-                 ArrayList<Integer> children, URI websocketAddr, Integer[] productionTarget, String confId) {
+     */
+    public Agent(int id,
+                 double setupCost,
+                 double storageCost,
+                 int productionLimit,
+                 ArrayList<Integer> children,
+                 URI websocketAddr,
+                 Integer[] productionTarget,
+                 String confId)
+    {
         //set the parameters
         this.id = id;
         this.setupCost = setupCost;
@@ -49,75 +68,93 @@ public class Agent implements MessageHandler{
         this.confId = confId;
     }
 
-    public double getSetupCost() {
+    public double getSetupCost()
+    {
         return setupCost;
     }
 
-    public void setSetupCost(double setupCost) {
+    public void setSetupCost(double setupCost)
+    {
         this.setupCost = setupCost;
     }
 
-    public double getStorageCost() {
+    public double getStorageCost()
+    {
         return storageCost;
     }
 
-    public void setStorageCost(double storageCost) {
+    public void setStorageCost(double storageCost)
+    {
         this.storageCost = storageCost;
     }
 
-    public ArrayList<Integer> getChildren() {
+    public ArrayList<Integer> getChildren()
+    {
         return children;
     }
 
-    public void setChildren(ArrayList<Integer> children) {
+    public void setChildren(ArrayList<Integer> children)
+    {
         this.children = children;
     }
 
-    public int getProductionLimit() {
+    public int getProductionLimit()
+    {
         return productionLimit;
     }
 
-    public void setProductionLimit(int productionLimit) {
+    public void setProductionLimit(int productionLimit)
+    {
         this.productionLimit = productionLimit;
     }
 
-    public WebsocketClient getClient() {
+    public WebsocketClient getClient()
+    {
         return client;
     }
 
-    public void setClient(WebsocketClient client) {
+    public void setClient(WebsocketClient client)
+    {
         this.client = client;
     }
 
-    public int getId() {
+    public int getId()
+    {
         return id;
     }
 
-    public void setId(int id) {
+    public void setId(int id)
+    {
         this.id = id;
     }
 
-    public URI getWebsocketAddr() {
+    public URI getWebsocketAddr()
+    {
         return websocketAddr;
     }
 
-    public void setWebsocketAddr(URI websocketAddr) {
+    public void setWebsocketAddr(URI websocketAddr)
+    {
         this.websocketAddr = websocketAddr;
     }
 
-    public Integer[] getProductionTarget() {
+    public Integer[] getProductionTarget()
+    {
         return productionTarget;
     }
 
-    public void setProductionTarget(Integer[] productionTarget) {
+    public void setProductionTarget(Integer[] productionTarget)
+    {
         this.productionTarget = productionTarget;
     }
 
-    public String getConfId() {
+    public String getConfId()
+    {
         return confId;
     }
 
-    public void setConfId(String confId) {
+    public void setConfId(String confId)
+    {
         this.confId = confId;
     }
 
@@ -125,14 +162,21 @@ public class Agent implements MessageHandler{
      * Connection setup and registering
      ******************************/
 
-    public int startConnection() throws ConnectException {
+    public int startConnection()
+        throws ConnectException
+    {
         //open the websocket
         URI url = this.websocketAddr;
-        if(url == null) {
-            try {
+        if ( url == null )
+        {
+            try
+            {
                 url = new URI("ws://localhost:8080/mediator/mediator");
-            } catch (URISyntaxException e) {
-                throw new ConnectException("Connection to " + this.websocketAddr.toString() + " failed");
+            }
+            catch ( URISyntaxException e )
+            {
+                throw new ConnectException("Connection to "
+                    + this.websocketAddr.toString() + " failed");
             }
         }
         this.client = new WebsocketClient(url);
@@ -146,12 +190,13 @@ public class Agent implements MessageHandler{
         return 0;
     }
 
-
     /**
      * Builds an AgentRegistration message and registers itself to the mediator.
      * If no connection is possible, a ConnectionException is thrown.
-     * */
-    private void registerAgent() throws ConnectException {
+     */
+    private void registerAgent()
+        throws ConnectException
+    {
         //build the registration
         AgentRegistration registration = new AgentRegistration();
         registration.setId(this.id);
@@ -159,37 +204,47 @@ public class Agent implements MessageHandler{
         registration.setRequires(this.children);
 
         //agent #1 must also add the demand
-        if(this.id == 1) {
+        if ( this.id == 1 )
+        {
             registration.setDemand(this.productionTarget);
         }
 
         //send out the registration
-        if(client == null)
-            throw new ConnectException("No connection to " + this.websocketAddr.toString() + " established. Can't send registration.");
+        if ( client == null )
+            throw new ConnectException("No connection to "
+                + this.websocketAddr.toString()
+                + " established. Can't send registration.");
         client.sendMessage(registration);
     }
 
     /******************************
-     *  production calculkation and costs
+     * production calculkation and costs
      ******************************/
 
     /**
      * Calculate the costs that arise because of required preproduction.
-     * @param items number of items that need to be preproduced
-     * @return a double value indicating the created costs by setup and storage costs of the past
-     * */
-    protected double getInitCosts(int items) {
+     * 
+     * @param items
+     *        number of items that need to be preproduced
+     * @return a double value indicating the created costs by setup and storage
+     *         costs of the past
+     */
+    protected double getInitCosts(int items)
+    {
         double initCosts;
         int productionDays;
         int stored_items;
 
-        if(items == 0) {
+        if ( items == 0 )
+        {
             //preproduction is not necessary
             initCosts = 0;
-        } else {
+        }
+        else
+        {
             //calculate the number of production days
             productionDays = items / this.productionLimit;
-            if(items % this.productionLimit != 0)
+            if ( items % this.productionLimit != 0 )
                 productionDays++;
 
             //sum up the setup costs
@@ -197,32 +252,40 @@ public class Agent implements MessageHandler{
 
             //calculate the costs of storing the products
             stored_items = items % this.productionLimit;
-            do {
+            do
+            {
                 initCosts += stored_items * this.storageCost;
                 stored_items += this.productionLimit;
-            } while(stored_items <= items);
+            } while ( stored_items <= items );
         }
 
         return initCosts;
     }
 
     /**
-     * Calculates the costs that are created by the created production plan and the demands
-     * @param production plan that contains data when and how many items are built
-     * @param demands Contains the details of how many items can be retreived in a period
-     * */
-    protected double getProductionCosts(Integer[] production, Integer[] demands) {
+     * Calculates the costs that are created by the created production plan and
+     * the demands
+     * 
+     * @param production
+     *        plan that contains data when and how many items are built
+     * @param demands
+     *        Contains the details of how many items can be retreived in a
+     *        period
+     */
+    protected double getProductionCosts(Integer[] production, Integer[] demands)
+    {
         double costs = getInitCosts(production[0]);
         int itemsInStore = production[0];
 
-        for(int i=0;i<demands.length;i++) {
+        for ( int i = 0; i < demands.length; i++ )
+        {
 
             //see if on that day there were production costs
-            if(production[i+1] > 0)
+            if ( production[i + 1] > 0 )
                 costs += this.setupCost;
 
             //calculate the number of items in store that day and sum up the costs
-            itemsInStore += production[i+1];
+            itemsInStore += production[i + 1];
             itemsInStore -= demands[i];
             costs += itemsInStore * this.storageCost;
         }
@@ -230,49 +293,61 @@ public class Agent implements MessageHandler{
         return costs;
     }
 
-
     /**
-     * Creates the production array that is ideal for the prodvided production days.
-     * Assumes that storage costs far outweigh the setupcosts. Otherwise in some cases
-     * it would not make sense to produce each day, but instead use the full capacity and
-     * store some items.
-     * @param demands This array contains the demands per days
-     * @param productionDays boolean array that defines on which periods it is allowed to produce something
+     * Creates the production array that is ideal for the prodvided production
+     * days. Assumes that storage costs far outweigh the setupcosts. Otherwise
+     * in some cases it would not make sense to produce each day, but instead
+     * use the full capacity and store some items.
+     * 
+     * @param demands
+     *        This array contains the demands per days
+     * @param productionDays
+     *        boolean array that defines on which periods it is allowed to
+     *        produce something
      * @return and int[] that contains the created mapping of production periods
-     * */
-    protected Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
+     */
+    protected Integer[] getProductionArray(Integer[] demands,
+                                           boolean[] productionDays)
+    {
         Integer production_array[] = new Integer[demands.length + 1];
         Arrays.fill(production_array, new Integer(0));
         int singleDemand;
         int remainingCapacity;
 
         //iterate through the demands array to calculate the demand
-        for (int i=0;i<demands.length;i++) {
+        for ( int i = 0; i < demands.length; i++ )
+        {
             singleDemand = demands[i];
             //iterate through the production array and set the numbers to be produced
-            for (int j=i+1;j>=0;j--) {
+            for ( int j = i + 1; j >= 0; j-- )
+            {
                 //check if the last value is reached, then the remaining numbers need to be produced in advance
-                if(j == 0){
-                    production_array[j]+=singleDemand;
+                if ( j == 0 )
+                {
+                    production_array[j] += singleDemand;
                     break;
                 }
 
                 //check if it is allowed to produce on that day
-                if(productionDays[j-1] == false)
+                if ( productionDays[j - 1] == false )
                     continue;
 
                 //check if on the current day there is enough capacity left to produce
                 remainingCapacity = this.productionLimit - production_array[j];
-                if(remainingCapacity > 0) {
+                if ( remainingCapacity > 0 )
+                {
                     //assign as much capacity as possible or needed
-                    if(singleDemand <= remainingCapacity) {
+                    if ( singleDemand <= remainingCapacity )
+                    {
                         //there is enough capacity available
-                        production_array[j]+=singleDemand;
+                        production_array[j] += singleDemand;
                         break;
-                    } else {
+                    }
+                    else
+                    {
                         //there is not enough capacity available
-                        production_array[j]+=remainingCapacity;
-                        singleDemand-=remainingCapacity;
+                        production_array[j] += remainingCapacity;
+                        singleDemand -= remainingCapacity;
                     }
                 }
             }
@@ -282,42 +357,56 @@ public class Agent implements MessageHandler{
     }
 
     /******************************
-     *  Message handling routines
+     * Message handling routines
      ******************************/
 
     @Override
     /**
-     * Provides message handling capabilities to the agent. So far these messages are supported:
-     * MediatorRequest:  agent calculates answer and sends it back
-     * EndOfNegotiation: agent simple prints its result for debugging purposes
-     * ErrorMessage:     agent prints the error
-     * All other message types also cause printing of an error
+     * Provides message handling capabilities to the agent. So far these
+     * messages are supported: MediatorRequest: agent calculates answer and
+     * sends it back EndOfNegotiation: agent simple prints its result for
+     * debugging purposes ErrorMessage: agent prints the error All other message
+     * types also cause printing of an error
      *
-     * @param message    Incoming message that needs handling
-     * */
-    public void onNewMessage(AbstractMessage message) {
-        if(message instanceof MediatorRequest) {
+     * @param message
+     *        Incoming message that needs handling
+     */
+    public void onNewMessage(AbstractMessage message)
+    {
+        if ( message instanceof MediatorRequest )
+        {
             //process the message and return the AgentResponse
-            AgentResponse res = handleMediatorRequest((MediatorRequest) message);
+            AgentResponse res =
+                handleMediatorRequest((MediatorRequest) message);
             this.client.sendMessage(res);
-        } else if (message instanceof EndNegotiation) {
+        }
+        else if ( message instanceof EndNegotiation )
+        {
             //only print the contents for logging / statistic purposes
             handleEndNegotiation((EndNegotiation) message);
-        } else if (message instanceof ErrorMessage) {
+        }
+        else if ( message instanceof ErrorMessage )
+        {
             //only print the error message
             handleErrorMessage((ErrorMessage) message);
-        } else {
+        }
+        else
+        {
             System.out.println("Unknown message " + message.toString());
         }
     }
 
     /**
-     * Handles the MedaitorRequest mesage by calculating the production arrays based on the demand
-     * and the provided solution of the mediator.
-     * @param req MediatorRequest containing the demands and solutions
-     * @return AgentResponse object containing the production arrays, costs and selection
-     * */
-    protected AgentResponse handleMediatorRequest(MediatorRequest req) {
+     * Handles the MedaitorRequest mesage by calculating the production arrays
+     * based on the demand and the provided solution of the mediator.
+     * 
+     * @param req
+     *        MediatorRequest containing the demands and solutions
+     * @return AgentResponse object containing the production arrays, costs and
+     *         selection
+     */
+    protected AgentResponse handleMediatorRequest(MediatorRequest req)
+    {
         Solution proposal;
         Integer[] productionArray;
         Integer[] productionArray_temp;
@@ -326,32 +415,37 @@ public class Agent implements MessageHandler{
 
         //create the AgentResponse object
         AgentResponse res = new AgentResponse();
-        Map<Integer, Double>    costs = res.getCosts();
+        Map<Integer, Double> costs = res.getCosts();
         Map<Integer, Integer[]> productionArrays = res.getDemands();
 
         //iterate all proposals and calculate the production arrays and theirs costs
-        Map<Integer, Solution>  solutions = req.getSolutions();
-        int i = 0;
-        for(Map.Entry<Integer, Solution> entry : solutions.entrySet()) {
+        Map<Integer, Solution> solutions = req.getSolutions();
+        for ( Map.Entry<Integer, Solution> entry : solutions.entrySet() )
+        {
             proposal = entry.getValue();
 
             //System.out.println("solution: " + proposal.toString());
 
             //store the calculated array
-            productionArray_temp = getProductionArray(proposal.getDemands(), proposal.getSolution());
-            productionArray = Arrays.copyOfRange(productionArray_temp, 1, productionArray_temp.length);
-            productionArrays.put(i, productionArray);
+            productionArray_temp = getProductionArray(proposal.getDemands(),
+                                                      proposal.getSolution());
+            productionArray =
+                Arrays.copyOfRange(productionArray_temp,
+                                   1,
+                                   productionArray_temp.length);
+            productionArrays.put(entry.getKey(), productionArray);
 
             //store the calculated costs
-            cost = getProductionCosts(productionArray_temp, proposal.getDemands());
-            costs.put(i, cost);
+            cost =
+                getProductionCosts(productionArray_temp, proposal.getDemands());
+            costs.put(entry.getKey(), cost);
 
             //update the selected solution if possible
-            if(best_solution_costs == 0 || cost < best_solution_costs){
+            if ( best_solution_costs == 0 || cost < best_solution_costs )
+            {
                 best_solution_costs = cost;
-                res.setSelection(i);
+                res.setSelection(entry.getKey());
             }
-            i++;
         }
 
         return res;
@@ -359,19 +453,27 @@ public class Agent implements MessageHandler{
 
     /**
      * Handles an EndNegotiation message by printing the final result to sysout.
-     * @param msg EndNegotiation message from the mediator
+     * 
+     * @param msg
+     *        EndNegotiation message from the mediator
      * @return 0 for success (currently no error defined)
-     * */
-    protected int handleEndNegotiation(EndNegotiation msg) {
+     */
+    protected int handleEndNegotiation(EndNegotiation msg)
+    {
         //just log the changes
         Solution proposal = msg.getSolution();
-        Integer[] productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
-        double costs = getProductionCosts(productionArray, proposal.getDemands());
+        Integer[] productionArray =
+            getProductionArray(proposal.getDemands(), proposal.getSolution());
+        double costs =
+            getProductionCosts(productionArray, proposal.getDemands());
 
         //print the created arrays
-        System.out.println("Agent " + this.id + " has ended negotioation with the following result:");
-        System.out.println("solution: " + Arrays.toString(proposal.getSolution()));
-        System.out.println("demand:   " + Arrays.toString(proposal.getDemands()));
+        System.out.println("Agent " + this.id
+            + " has ended negotioation with the following result:");
+        System.out
+            .println("solution: " + Arrays.toString(proposal.getSolution()));
+        System.out
+            .println("demand:   " + Arrays.toString(proposal.getDemands()));
         System.out.println("result:   " + Arrays.toString(productionArray));
         System.out.println("Costs:    " + costs);
 
@@ -379,12 +481,16 @@ public class Agent implements MessageHandler{
     }
 
     /**
-     * Handles an ErrorMessage by printing the error message. Since the agent is operating
-     * stateless (agent does not remember previous states), there is nothing else to do.
-     * @param errmsg ErrorMessage message from the mediator
+     * Handles an ErrorMessage by printing the error message. Since the agent is
+     * operating stateless (agent does not remember previous states), there is
+     * nothing else to do.
+     * 
+     * @param errmsg
+     *        ErrorMessage message from the mediator
      * @return 0 for success (currently no error defined)
-     * */
-    protected int handleErrorMessage(ErrorMessage errmsg) {
+     */
+    protected int handleErrorMessage(ErrorMessage errmsg)
+    {
         System.out.println("Received Error Message: " + errmsg.toString());
         return 0;
     }
