@@ -164,7 +164,7 @@ public class Mediator implements Runnable {
 	 * @return A map of the agents' preferences (agent id => solution id)
 	 */
 	private Thenable<Map<Integer, Integer>> recursiveNegotiation(AgentProxy current, Map<Integer, Proposal> proposals) {
-		List<Thenable> nextIteration = new ArrayList<Thenable>();
+		Thenable<Map<Integer, Integer>> result = new Thenable<Map<Integer, Integer>>();
 
 		// simple Integer is not allowed: "Local variable currentAgentPreference
 		// defined in an enclosing scope must be final or effectively final"
@@ -175,6 +175,8 @@ public class Mediator implements Runnable {
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
+			List<Thenable> nextIteration = new ArrayList<Thenable>();
+			
 			Map<Integer, Integer[]> agentDemandVariants = readDependentDemands(response, request.getSolutions().size());
 			
 			currentAgentPreference[0] = response.getSelection();
@@ -199,20 +201,19 @@ public class Mediator implements Runnable {
 				log.finer("Asking agent " + childId);
 				nextIteration.add(recursiveNegotiation(agents.get(childId), nextIterationProposals));
 			});
-		});
+			
+			
+			// collect votes from recursive calls
+			Thenable.whenAll(nextIteration).then(results -> {
+				Map<Integer, Integer> pref = new HashMap<Integer, Integer>();
 
-		Thenable<Map<Integer, Integer>> result = new Thenable<Map<Integer, Integer>>();
+				for (int i = 0; i < results.length; i++) {
+					pref.putAll((Map<Integer, Integer>) results[i]);
+				}
+				pref.put(current.getId(), currentAgentPreference[0]);
 
-		// collect votes from recursive calls
-		Thenable.whenAll(nextIteration).then(results -> {
-			Map<Integer, Integer> pref = new HashMap<Integer, Integer>();
-
-			for (int i = 0; i < results.length; i++) {
-				pref.putAll((Map<Integer, Integer>) results[i]);
-			}
-			pref.put(current.getId(), currentAgentPreference[0]);
-
-			result.resolve(pref);
+				result.resolve(pref);
+			});
 		});
 
 		return result;
@@ -241,7 +242,7 @@ public class Mediator implements Runnable {
 	 *            The solution that is to be communicated to all agents
 	 */
 	private Thenable<Void> endNegotiationRecursive(AgentProxy current, Proposal chosenSolution) {
-		List<Thenable> runningMessages = new ArrayList<Thenable>();
+		Thenable<Void> result = new Thenable<Void>();
 
 		// map view on bit string and primary secondary/secondary demands from
 		// previous agent into message
@@ -252,6 +253,8 @@ public class Mediator implements Runnable {
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
+			List<Thenable> runningMessages = new ArrayList<Thenable>();
+			
 			Map<Integer, Integer[]> agentDemandVariants = readDependentDemands(response, 1);
 
 			// prepare recursion: Get full solution (not only view for previous
@@ -273,12 +276,12 @@ public class Mediator implements Runnable {
 			EndNegotiation message = new EndNegotiation();
 			message.setSolution(request.getSolutions().get(1));
 			runningMessages.add(current.endNegotiation(message));
+			
+			Thenable.whenAll(runningMessages).then(r -> {
+				result.resolve(null);
+			});
 		});
 
-		Thenable<Void> result = new Thenable<Void>();
-		Thenable.whenAll(runningMessages).then(r -> {
-			result.resolve(null);
-		});
 		return result;
 	}
 
