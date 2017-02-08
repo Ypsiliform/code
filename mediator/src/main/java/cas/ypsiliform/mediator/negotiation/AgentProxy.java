@@ -5,7 +5,9 @@ import java.util.stream.Collectors;
 
 import cas.ypsiliform.mediator.agentregistration.AgentData;
 import cas.ypsiliform.mediator.async.Thenable;
+import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.messages.AgentResponse;
+import cas.ypsiliform.messages.MediatorRequest;
 
 public class AgentProxy
 {
@@ -13,6 +15,8 @@ public class AgentProxy
         new ArrayList<AgentDeadListener>();
 
     private AgentData data;
+
+    private Thenable<AgentResponse> responseAble;
 
     public AgentProxy(AgentData data)
     {
@@ -22,6 +26,22 @@ public class AgentProxy
     public AgentData getAgentData()
     {
         return data;
+    }
+
+    public boolean isMySessionId(String id)
+    {
+        return id.equals(data.getSession().getId());
+    }
+
+    public void onNewMessage(NewMessageEvent event)
+    {
+        if ( event.getMessage() instanceof AgentResponse )
+        {
+            if ( responseAble != null )
+            {
+                responseAble.resolve((AgentResponse) event.getMessage());
+            }
+        }
     }
 
     public void addAgentDeadListener(AgentDeadListener listener)
@@ -60,10 +80,13 @@ public class AgentProxy
         });
     }
 
-    public Thenable<AgentResponse> sendSolutionProposal(SolutionProposal solution)
+    public Thenable<AgentResponse> sendSolutionProposals(MediatorRequest solution)
     {
-        // TODO implementation missing
-        throw new UnsupportedOperationException();
+        assert responseAble == null || responseAble
+            .isResolved() == true : "don't support parallel messages";
+        responseAble = new Thenable<>();
+        data.sendMessage(solution);
+        return responseAble;
     }
 
     public Thenable<Void> endNegotiation(SolutionProposal solution)

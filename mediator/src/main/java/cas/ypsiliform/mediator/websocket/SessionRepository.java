@@ -1,5 +1,7 @@
 package cas.ypsiliform.mediator.websocket;
 
+import cas.ypsiliform.mediator.negotiation.AgentProxy;
+
 public interface SessionRepository
 {
 
@@ -9,5 +11,7 @@ public interface SessionRepository
     void removeSession(String id);
 
     void onNewAgentRegistration(NewMessageEvent event);
+
+    AgentProxy getAgentForSessionId(String id);
 
 }
