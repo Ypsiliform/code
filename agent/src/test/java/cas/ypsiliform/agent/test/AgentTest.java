@@ -1,5 +1,6 @@
 package cas.ypsiliform.agent.test;
 
+import cas.ypsiliform.Constants;
 import cas.ypsiliform.messages.AgentResponse;
 import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.MediatorRequest;
@@ -82,15 +83,15 @@ public class AgentTest {
         assertEquals(expectedCosts, agent.getInitCosts(0), 0);
 
         //easy test, just one day
-        expectedCosts = setupCosts + 10*storageCosts;
+        expectedCosts = (setupCosts + 10*storageCosts) * Constants.Agent.COST_CORRECTION_FACTOR;
         assertEquals(expectedCosts, agent.getInitCosts(10), 0);
 
         //just one day production, result not an int
-        expectedCosts = setupCosts + 15 * storageCosts;
+        expectedCosts = (setupCosts + 15 * storageCosts) * Constants.Agent.COST_CORRECTION_FACTOR;
         assertEquals(expectedCosts, agent.getInitCosts(15), 0);
 
         //complex test, 3 days of producing and storing goods
-        expectedCosts = 3*setupCosts + 10 * storageCosts + 80 * storageCosts + 150 * storageCosts;
+        expectedCosts = (3*setupCosts + 10 * storageCosts + 80 * storageCosts + 150 * storageCosts) * Constants.Agent.COST_CORRECTION_FACTOR;
         assertEquals(expectedCosts,agent.getInitCosts(150), 0);
     }
 
@@ -152,10 +153,12 @@ public class AgentTest {
         boolean productionDays_2[]      = {true, true, true, true, true};
         boolean productionDays_3[]      = {true, false, false, false, false};
         boolean productionDays_4[]      = {true, false, false, true, false};
+
         Integer expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
         Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
         Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
         Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+
         Integer expectedSolution_1[]    = {110, 70, 0, 70, 0};
         Integer expectedSolution_2[]    = {0, 60, 70, 70, 50};
         Integer expectedSolution_3[]    = {250, 0, 0, 0, 0};

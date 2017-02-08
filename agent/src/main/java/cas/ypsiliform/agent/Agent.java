@@ -1,5 +1,6 @@
 package cas.ypsiliform.agent;
 
+import cas.ypsiliform.Constants;
 import cas.ypsiliform.agent.websocket.MessageHandler;
 import cas.ypsiliform.agent.websocket.WebsocketClient;
 import cas.ypsiliform.messages.*;
@@ -12,14 +13,6 @@ import java.util.Arrays;
 import java.util.Map;
 
 public class Agent implements MessageHandler{
-
-    /**
-     * This factor can be used to make storage costs a lot more costly
-     * This is only necessary if the mediator selects the solution that best suits
-     * all agents. In order to avoid the first agent to simply retrieve all items
-     * from store, the storage costs can be made a lot more costly.
-     */
-    private static final int COST_CORRECTION_FACTOR = 1;
 
     private int id;                         // ID of the agent, starting from 1
     private double setupCost;               // costs for producing in this period
@@ -178,16 +171,18 @@ public class Agent implements MessageHandler{
     }
 
     /******************************
-     *  production calculkation and costs
+     *  production calculation and costs
      ******************************/
 
     /**
      * Calculate the costs that arise because of required preproduction.
      * @param items
-     *          number of items that need to be preproduced
-     * @return a double value indicating the created costs by setup and storage costs of the past
-     * */
-    protected double getInitCosts(int items) {
+     *        number of items that need to be preproduced
+     * @return a double value indicating the created costs by setup and storage
+     *         costs of the past
+     */
+    protected double getInitCosts(int items)
+    {
         double initCosts;
         int productionDays;
         int stored_items;
@@ -212,7 +207,7 @@ public class Agent implements MessageHandler{
             } while(stored_items <= items);
         }
 
-        return initCosts * COST_CORRECTION_FACTOR;
+        return initCosts * Constants.Agent.COST_CORRECTION_FACTOR;
     }
 
     /**
@@ -346,7 +341,6 @@ public class Agent implements MessageHandler{
 
         //iterate all proposals and calculate the production arrays and theirs costs
         Map<Integer, Solution>  solutions = req.getSolutions();
-        int i = 0;
         for(Map.Entry<Integer, Solution> entry : solutions.entrySet()) {
             proposal = entry.getValue();
 
@@ -356,21 +350,21 @@ public class Agent implements MessageHandler{
             // a competitive advantage, the items from the storage are added to the first bucket.
             realProductionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
             adaptedProductionArray = Arrays.copyOfRange(realProductionArray, 1, realProductionArray.length);
-            if(COST_CORRECTION_FACTOR == 1) {
+            // Only sum up the changes if the storage has not already been marked with extra costs
+            if(Constants.Agent.COST_CORRECTION_FACTOR == 1) {
                 adaptedProductionArray[0] += realProductionArray[0];
             }
-            productionArrays.put(i, adaptedProductionArray);
+            productionArrays.put(entry.getKey(), adaptedProductionArray);
 
             //store the calculated costs
             cost = getProductionCosts(realProductionArray, proposal.getDemands());
-            costs.put(i, cost);
+            costs.put(entry.getKey(), cost);
 
             //update the selected solution if possible
             if(best_solution_costs == 0 || cost < best_solution_costs){
                 best_solution_costs = cost;
-                res.setSelection(i);
+                res.setSelection(entry.getKey());
             }
-            i++;
         }
 
         return res;
