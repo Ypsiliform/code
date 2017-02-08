@@ -7,6 +7,7 @@ public interface Constants {
 	
 	interface Negotiation {
 		int NUMBER_OF_ROUNDS = 1000;
+		int INITIAL_NUMBER_OF_MUTATION = 30;
 		int TIMEOUT_PER_ROUND_MS = 5*1000;
 	}
 

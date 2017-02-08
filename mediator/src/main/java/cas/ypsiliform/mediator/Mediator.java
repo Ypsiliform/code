@@ -67,6 +67,7 @@ public class Mediator implements Runnable {
 			log.fine("Entering round " + i);
 
 			SolutionProposal[] nextGen = generateOffspring(getNumberOfProposals(),
+					getNumberOfMutations(i, Constants.Negotiation.NUMBER_OF_ROUNDS),
 					solutions.toArray(new SolutionProposal[0]));
 
 			Map<Integer, Proposal> proposals = new HashMap<Integer, Proposal>();
@@ -115,6 +116,11 @@ public class Mediator implements Runnable {
 		log.info("Negotiation ended");
 	}
 
+	private int getNumberOfMutations(int round, int totalRounds) {
+		return (int) Math.ceil(
+				Constants.Negotiation.INITIAL_NUMBER_OF_MUTATION * (Math.pow(Math.E, -(round / (totalRounds / 3)))));
+	}
+
 	/**
 	 * Determine how many solution proposals will be sent per iteration of the
 	 * negotiation We have to send less proposals than the number of agents to
@@ -135,7 +141,8 @@ public class Mediator implements Runnable {
 	 *            Parents from which to mutate new solutions
 	 * @return parents + mutations of parents
 	 */
-	private SolutionProposal[] generateOffspring(int numberOfSolutions, SolutionProposal... parents) {
+	private SolutionProposal[] generateOffspring(int numberOfSolutions, int numberOfMutations,
+			SolutionProposal... parents) {
 		SolutionProposal[] result = new SolutionProposal[numberOfSolutions];
 
 		int i = 0;
@@ -144,7 +151,7 @@ public class Mediator implements Runnable {
 		}
 
 		for (; i < numberOfSolutions; i++) {
-			result[i] = parents[i % parents.length].mutate();
+			result[i] = parents[i % parents.length].mutate(numberOfMutations);
 		}
 
 		return result;
