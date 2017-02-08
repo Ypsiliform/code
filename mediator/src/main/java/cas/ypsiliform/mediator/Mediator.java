@@ -176,9 +176,9 @@ public class Mediator implements Runnable {
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
 			List<Thenable> nextIteration = new ArrayList<Thenable>();
-			
+
 			Map<Integer, Integer[]> agentDemandVariants = readDependentDemands(response, request.getSolutions().size());
-			
+
 			currentAgentPreference[0] = response.getSelection();
 
 			log.finer("Agent " + current.getId() + " prefers solution " + currentAgentPreference[0]);
@@ -201,33 +201,24 @@ public class Mediator implements Runnable {
 				log.finer("Asking agent " + childId);
 				nextIteration.add(recursiveNegotiation(agents.get(childId), nextIterationProposals));
 			});
-			
-			
-			// collect votes from recursive calls
-			Thenable.whenAll(nextIteration).then(results -> {
-				Map<Integer, Integer> pref = new HashMap<Integer, Integer>();
 
-				for (int i = 0; i < results.length; i++) {
-					pref.putAll((Map<Integer, Integer>) results[i]);
-				}
-				pref.put(current.getId(), currentAgentPreference[0]);
+			Map<Integer, Integer> pref = new HashMap<Integer, Integer>();
+			pref.put(current.getId(), currentAgentPreference[0]);
 
+			if (nextIteration.isEmpty()) {
 				result.resolve(pref);
-			});
+			} else {
+				// collect votes from recursive calls
+				Thenable.whenAll(nextIteration).then(results -> {
+					for (int i = 0; i < results.length; i++) {
+						pref.putAll((Map<Integer, Integer>) results[i]);
+					}
+					result.resolve(pref);
+				});
+			}
 		});
 
 		return result;
-	}
-
-	private Map<Integer, Integer[]> readDependentDemands(AgentResponse response, int numberOfVariantsExpected) {
-		// store and validate response
-		Map<Integer, Integer[]> agentDemandVariants = response.getDemands();
-
-		assert agentDemandVariants.size() == numberOfVariantsExpected : "Expected to receive as many secondary demand variants from agent as were sent to it";
-		for (int i = 1; i <= agentDemandVariants.size(); i++) {
-			assert agentDemandVariants.containsKey(i) : "Expect demands to be mapped from 1 to n";
-		}
-		return agentDemandVariants;
 	}
 
 	/**
@@ -254,7 +245,7 @@ public class Mediator implements Runnable {
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
 			List<Thenable> runningMessages = new ArrayList<Thenable>();
-			
+
 			Map<Integer, Integer[]> agentDemandVariants = readDependentDemands(response, 1);
 
 			// prepare recursion: Get full solution (not only view for previous
@@ -276,7 +267,7 @@ public class Mediator implements Runnable {
 			EndNegotiation message = new EndNegotiation();
 			message.setSolution(request.getSolutions().get(1));
 			runningMessages.add(current.endNegotiation(message));
-			
+
 			Thenable.whenAll(runningMessages).then(r -> {
 				result.resolve(null);
 			});
@@ -304,6 +295,18 @@ public class Mediator implements Runnable {
 		sol.setSolution(proposal.solution.sliceForAgent(agentId - 1));
 		sol.setDemands(proposal.demands);
 		return sol;
+	}
+
+	private Map<Integer, Integer[]> readDependentDemands(AgentResponse response, int numberOfVariantsExpected) {
+		// store and validate response
+		Map<Integer, Integer[]> agentDemandVariants = response.getDemands();
+
+		assert agentDemandVariants
+				.size() == numberOfVariantsExpected : "Expected to receive as many secondary demand variants from agent as were sent to it";
+		for (int i = 1; i <= agentDemandVariants.size(); i++) {
+			assert agentDemandVariants.containsKey(i) : "Expect demands to be mapped from 1 to n";
+		}
+		return agentDemandVariants;
 	}
 
 	private void registerAgentDeadListener(Collection<AgentProxy> agents) {
