@@ -59,7 +59,7 @@ public class Mediator implements Runnable {
 	public void run() {
 		log.info("Starting new negotiation with " + agents.size() + " agents");
 
-		List<SolutionProposal> solutions = Collections.EMPTY_LIST;
+		List<SolutionProposal> solutions = new ArrayList<SolutionProposal>();
 		solutions.add(new SolutionProposal(Constants.Encoding.NUMBER_OF_PERIODS));
 
 		for (int i = 0; i < Constants.Negotiation.NUMBER_OF_ROUNDS; i++) {
@@ -237,7 +237,7 @@ public class Mediator implements Runnable {
 		// map view on bit string and primary secondary/secondary demands from
 		// previous agent into message
 
-		Map<Integer, Proposal> proposalMap = Collections.emptyMap();
+		Map<Integer, Proposal> proposalMap = new HashMap<Integer, Proposal>();
 		proposalMap.put(1, chosenSolution);
 		MediatorRequest request = getMediatorRequestMessage(current.getId(), proposalMap);
 
