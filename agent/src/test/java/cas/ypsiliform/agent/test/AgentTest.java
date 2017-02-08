@@ -9,6 +9,7 @@ import cas.ypsiliform.agent.Agent;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -158,6 +159,10 @@ public class AgentTest {
         Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
         Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
         Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+        Integer expectedSolution_1[]    = {70, 70, 0, 70, 0};
+        Integer expectedSolution_2[]    = {0, 60, 70, 70, 50};
+        Integer expectedSolution_3[]    = {70, 0, 0, 0, 0};
+        Integer expectedSolution_4[]    = {70, 0, 0, 70, 0};
 
         //Create 4 solutions that should be put into the MediatorRequest
         Solution solution_1 = new Solution();
@@ -187,10 +192,10 @@ public class AgentTest {
 
         //build the expected answers
         Map<Integer, Integer[]> allNewDemands = new HashMap<>();
-        allNewDemands.put(0, expectedProduction_1);
-        allNewDemands.put(1, expectedProduction_2);
-        allNewDemands.put(2, expectedProduction_3);
-        allNewDemands.put(3, expectedProduction_4);
+        allNewDemands.put(0, expectedSolution_1);
+        allNewDemands.put(1, expectedSolution_2);
+        allNewDemands.put(2, expectedSolution_3);
+        allNewDemands.put(3, expectedSolution_4);
 
         //calculate the expected costs
         Map<Integer, Double> allCosts = new HashMap<>();
@@ -207,6 +212,11 @@ public class AgentTest {
 
         //get the response from the function
         AgentResponse gen_res = agent.handleMediatorRequest(req);
+
+        System.out.println("response");
+        for(Map.Entry<Integer, Integer[]> entry : gen_res.getDemands().entrySet()) {
+            System.out.println(Arrays.toString(entry.getValue()));
+        }
 
         assertEquals(res, gen_res);
     }

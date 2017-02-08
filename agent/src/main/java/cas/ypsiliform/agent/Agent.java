@@ -320,6 +320,7 @@ public class Agent implements MessageHandler{
     protected AgentResponse handleMediatorRequest(MediatorRequest req) {
         Solution proposal;
         Integer[] productionArray;
+        Integer[] productionArray_temp;
         double cost;
         double best_solution_costs = 0;
 
@@ -337,11 +338,12 @@ public class Agent implements MessageHandler{
             //System.out.println("solution: " + proposal.toString());
 
             //store the calculated array
-            productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
+            productionArray_temp = getProductionArray(proposal.getDemands(), proposal.getSolution());
+            productionArray = Arrays.copyOfRange(productionArray_temp, 1, productionArray_temp.length);
             productionArrays.put(i, productionArray);
 
             //store the calculated costs
-            cost = getProductionCosts(productionArray, proposal.getDemands());
+            cost = getProductionCosts(productionArray_temp, proposal.getDemands());
             costs.put(i, cost);
 
             //update the selected solution if possible
