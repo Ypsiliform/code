@@ -13,6 +13,7 @@ import cas.ypsiliform.mediator.async.Function;
 import cas.ypsiliform.mediator.async.Thenable;
 import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.negotiation.SolutionProposal;
+import cas.ypsiliform.messages.AgentResponse;
 import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.MediatorRequest;
 import cas.ypsiliform.messages.Solution;
@@ -174,20 +175,17 @@ public class Mediator implements Runnable {
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
-			// store and validate response
-			Map<Integer, Integer[]> agentDemandVariants = response.getDemands();
+			Map<Integer, Integer[]> agentDemandVariants = readDependentDemands(response, request.getSolutions().size());
+			
 			currentAgentPreference[0] = response.getSelection();
 
 			log.finer("Agent " + current.getId() + " prefers solution " + currentAgentPreference[0]);
-
-			assert agentDemandVariants.size() == request.getSolutions()
-					.size() : "Expected to receive as many secondary demand variants from agent as were sent to it";
 
 			// prepare recursion: Get full solution proposal (not only view for
 			// previous agent) and secondary demands
 			Map<Integer, Proposal> nextIterationProposals = new HashMap<Integer, Proposal>();
 
-			for (int j = 0; j < response.getDemands().size(); j++) {
+			for (int j = 1; j <= agentDemandVariants.size(); j++) {
 				Integer[] demandVariant = agentDemandVariants.get(j);
 
 				assert demandVariant.length == Constants.Encoding.NUMBER_OF_PERIODS : "Number of secondary demands should equal number of periods";
@@ -220,6 +218,17 @@ public class Mediator implements Runnable {
 		return result;
 	}
 
+	private Map<Integer, Integer[]> readDependentDemands(AgentResponse response, int numberOfVariantsExpected) {
+		// store and validate response
+		Map<Integer, Integer[]> agentDemandVariants = response.getDemands();
+
+		assert agentDemandVariants.size() == numberOfVariantsExpected : "Expected to receive as many secondary demand variants from agent as were sent to it";
+		for (int i = 1; i <= agentDemandVariants.size(); i++) {
+			assert agentDemandVariants.containsKey(i) : "Expect demands to be mapped from 1 to n";
+		}
+		return agentDemandVariants;
+	}
+
 	/**
 	 * Recursively traverse the supply chain one last time to gather the
 	 * secondary demands of all agents for the next level and then end the
@@ -243,11 +252,7 @@ public class Mediator implements Runnable {
 
 		// send message to current agent asynchronously
 		current.sendSolutionProposals(request).then(response -> {
-			// store and validate response
-			Map<Integer, Integer[]> agentDemandVariants = response.getDemands();
-
-			assert agentDemandVariants
-					.size() == 1 : "Expected to receive as many secondary demand variants from agent as were sent to it";
+			Map<Integer, Integer[]> agentDemandVariants = readDependentDemands(response, 1);
 
 			// prepare recursion: Get full solution (not only view for previous
 			// agent) and secondary demands
