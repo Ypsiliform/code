@@ -8,7 +8,6 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.websocket.ClientEndpoint;
 import javax.websocket.ContainerProvider;
-import javax.websocket.EncodeException;
 import javax.websocket.OnMessage;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
@@ -67,13 +66,11 @@ public class WebsocketClient {
 		}
 	}
 
-	public void sendMessage(AbstractMessage message) {
+	public void sendMessage(AbstractMessage message)  {
 		try {
 			this.userSession.getBasicRemote().sendObject(message);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (EncodeException e) {
-			e.printStackTrace();
+		} catch (Exception e) {
+			throw new RuntimeException(e);
 		}
 	}
 }
