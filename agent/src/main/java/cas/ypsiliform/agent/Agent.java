@@ -6,14 +6,9 @@ import cas.ypsiliform.messages.*;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
-
-/**
- * Created by paul on 06.02.17.
- */
 
 public class Agent implements MessageHandler{
 
@@ -22,15 +17,19 @@ public class Agent implements MessageHandler{
     private int productionLimit;
     private ArrayList<Integer> children;
     private WebsocketClient client;
+    private int id;
+    private URI websocketAddr;
 
     /**
      * Agent constructor to initialize an agent
      * */
-    public Agent(double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children) {
+    public Agent(int id, double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children, URI websocketAddr) {
+        this.id = id;
         this.setupCost = setupCost;
         this.storageCost = storageCost;
         this.productionLimit = productionLimit;
         this.children = children;
+        this.websocketAddr = websocketAddr;
     }
 
     public double getSetupCost() {
@@ -64,6 +63,34 @@ public class Agent implements MessageHandler{
     public void setProductionLimit(int productionLimit) {
         this.productionLimit = productionLimit;
     }
+
+    public WebsocketClient getClient() {
+        return client;
+    }
+
+    public void setClient(WebsocketClient client) {
+        this.client = client;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public URI getWebsocketAddr() {
+        return websocketAddr;
+    }
+
+    public void setWebsocketAddr(URI websocketAddr) {
+        this.websocketAddr = websocketAddr;
+    }
+
+    /******************************
+     *  production calculkation and costs
+     ******************************/
 
     /**
      * Calculate the costs that arise because of required preproduction.
@@ -194,6 +221,11 @@ public class Agent implements MessageHandler{
         return 0;
     }
 
+
+    /******************************
+     *  Message handling routines
+     ******************************/
+
     @Override
     /**
      * Provides message handling capabilities to the agent. So far these messages are supported:
@@ -238,8 +270,11 @@ public class Agent implements MessageHandler{
 
         //iterate all proposals and calculate the production arrays and theirs costs
         Map<Integer, Solution>  solutions = req.getSolutions();
-        for(int i=0; i < solutions.size();i++) {
-            proposal = solutions.get(i);
+        int i = 0;
+        for(Map.Entry<Integer, Solution> entry : solutions.entrySet()) {
+            proposal = entry.getValue();
+
+            //System.out.println("solution: " + proposal.toString());
 
             //store the calculated array
             productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
@@ -254,15 +289,39 @@ public class Agent implements MessageHandler{
                 best_solution_costs = cost;
                 res.setSelection(i);
             }
+            i++;
         }
 
         return res;
     }
 
+    /**
+     * Handles an EndNegotiation message by printing the final result to sysout.
+     * @param msg EndNegotiation message from the mediator
+     * @return 0 for success (currently no error defined)
+     * */
     protected int handleEndNegotiation(EndNegotiation msg) {
+        //just log the changes
+        Solution proposal = msg.getSolution();
+        Integer[] productionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
+        double costs = getProductionCosts(productionArray, proposal.getDemands());
+
+        //print the created arrays
+        System.out.println("Agent " + this.id + " has ended negotioation with the following result:");
+        System.out.println("solution: " + Arrays.toString(proposal.getSolution()));
+        System.out.println("demand:   " + Arrays.toString(proposal.getDemands()));
+        System.out.println("result:   " + Arrays.toString(productionArray));
+        System.out.println("Costs:    " + costs);
+
         return 0;
     }
 
+    /**
+     * Handles an ErrorMessage by printing the error message. Since the agent is operating
+     * stateless (agent does not remember previous states), there is nothing else to do.
+     * @param errmsg ErrorMessage message from the mediator
+     * @return 0 for success (currently no error defined)
+     * */
     protected int handleErrorMessage(ErrorMessage errmsg) {
         System.out.println("Received Error Message: " + errmsg.toString());
         return 0;

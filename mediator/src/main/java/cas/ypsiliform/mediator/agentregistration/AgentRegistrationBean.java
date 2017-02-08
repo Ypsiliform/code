@@ -4,16 +4,22 @@
 package cas.ypsiliform.mediator.agentregistration;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import javax.annotation.Resource;
 import javax.ejb.Asynchronous;
 import javax.ejb.Local;
+import javax.ejb.Lock;
+import javax.ejb.LockType;
 import javax.ejb.Singleton;
+import javax.enterprise.concurrent.ManagedThreadFactory;
 import javax.enterprise.event.Observes;
 
+import cas.ypsiliform.mediator.Mediator;
 import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.mediator.websocket.SessionRepository;
@@ -29,6 +35,9 @@ public class AgentRegistrationBean
         new HashMap<>();
     private Map<String, Map<Integer, AgentProxy>> configAgentMap =
         new HashMap<>();
+
+    @Resource
+    private ManagedThreadFactory managedThreadFactory;
 
     @Override
     @Asynchronous
@@ -55,7 +64,12 @@ public class AgentRegistrationBean
 
             if ( agentMap.size() == 5 )
             {
-                //TODO: trigger Mediator
+                Integer lowestKey = Collections.min(agentMap.keySet());
+                Mediator mediator = new Mediator(agentMap,
+                                                 agentMap.get(lowestKey)
+                                                     .getAgentData()
+                                                     .getInitialDemand());
+                managedThreadFactory.newThread(mediator).start();
             }
         }
     }
@@ -128,12 +142,26 @@ public class AgentRegistrationBean
             if ( map.isEmpty() )
             {
                 configAgentMap.remove(a.getConfig());
+                requiresCache.remove(a.getConfig());
             }
             if ( proxy != null )
             {
                 proxy.onAgentRemoved();
             }
         });
+    }
+
+    @Override
+    @Lock(LockType.READ)
+    public AgentProxy getAgentForSessionId(String id)
+    {
+        return configAgentMap.values()
+            .stream()
+            .map(v -> v.values())
+            .flatMap(x -> x.stream())
+            .filter(agent -> agent.isMySessionId(id))
+            .findFirst()
+            .orElseGet(null);
     }
 
 }
