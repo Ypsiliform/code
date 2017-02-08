@@ -5,6 +5,7 @@ package cas.ypsiliform.mediator.agentregistration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 import javax.websocket.Session;
 
@@ -12,6 +13,9 @@ import cas.ypsiliform.messages.AbstractMessage;
 
 public class AgentData
 {
+
+    private static final Logger LOGGER =
+        Logger.getLogger(AgentData.class.getName());
 
     private Session session;
 
@@ -83,6 +87,8 @@ public class AgentData
 
     public void sendMessage(AbstractMessage message)
     {
+        LOGGER.fine("send new message to agent " + this.id + " message = "
+            + message);
         session.getAsyncRemote().sendObject(message);
     }
 
