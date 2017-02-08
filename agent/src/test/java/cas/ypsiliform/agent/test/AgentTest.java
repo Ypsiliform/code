@@ -15,9 +15,6 @@ import java.util.Map;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by paul on 06.02.17.
- */
 public class AgentTest {
 
     //innerclass that makes use of the protected methods to make them public, since only public methods can be tested
@@ -159,10 +156,10 @@ public class AgentTest {
         Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
         Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
         Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
-        Integer expectedSolution_1[]    = {70, 70, 0, 70, 0};
+        Integer expectedSolution_1[]    = {110, 70, 0, 70, 0};
         Integer expectedSolution_2[]    = {0, 60, 70, 70, 50};
-        Integer expectedSolution_3[]    = {70, 0, 0, 0, 0};
-        Integer expectedSolution_4[]    = {70, 0, 0, 70, 0};
+        Integer expectedSolution_3[]    = {250, 0, 0, 0, 0};
+        Integer expectedSolution_4[]    = {180, 0, 0, 70, 0};
 
         //Create 4 solutions that should be put into the MediatorRequest
         Solution solution_1 = new Solution();

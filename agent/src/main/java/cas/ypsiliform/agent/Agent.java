@@ -13,6 +13,14 @@ import java.util.Map;
 
 public class Agent implements MessageHandler{
 
+    /**
+     * This factor can be used to make storage costs a lot more costly
+     * This is only necessary if the mediator selects the solution that best suits
+     * all agents. In order to avoid the first agent to simply retrieve all items
+     * from store, the storage costs can be made a lot more costly.
+     */
+    private static final int COST_CORRECTION_FACTOR = 1;
+
     private int id;                         // ID of the agent, starting from 1
     private double setupCost;               // costs for producing in this period
     private double storageCost;             // costs per unit per period for storing
@@ -175,7 +183,8 @@ public class Agent implements MessageHandler{
 
     /**
      * Calculate the costs that arise because of required preproduction.
-     * @param items number of items that need to be preproduced
+     * @param items
+     *          number of items that need to be preproduced
      * @return a double value indicating the created costs by setup and storage costs of the past
      * */
     protected double getInitCosts(int items) {
@@ -203,13 +212,15 @@ public class Agent implements MessageHandler{
             } while(stored_items <= items);
         }
 
-        return initCosts;
+        return initCosts * COST_CORRECTION_FACTOR;
     }
 
     /**
      * Calculates the costs that are created by the created production plan and the demands
-     * @param production plan that contains data when and how many items are built
-     * @param demands Contains the details of how many items can be retreived in a period
+     * @param production
+     *          plan that contains data when and how many items are built
+     * @param demands
+     *          Contains the details of how many items can be retreived in a period
      * */
     protected double getProductionCosts(Integer[] production, Integer[] demands) {
         double costs = getInitCosts(production[0]);
@@ -236,8 +247,10 @@ public class Agent implements MessageHandler{
      * Assumes that storage costs far outweigh the setupcosts. Otherwise in some cases
      * it would not make sense to produce each day, but instead use the full capacity and
      * store some items.
-     * @param demands This array contains the demands per days
-     * @param productionDays boolean array that defines on which periods it is allowed to produce something
+     * @param demands
+     *          This array contains the demands per days
+     * @param productionDays
+     *          boolean array that defines on which periods it is allowed to produce something
      * @return and int[] that contains the created mapping of production periods
      * */
     protected Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
@@ -293,7 +306,8 @@ public class Agent implements MessageHandler{
      * ErrorMessage:     agent prints the error
      * All other message types also cause printing of an error
      *
-     * @param message    Incoming message that needs handling
+     * @param message
+     *          Incoming message that needs handling
      * */
     public void onNewMessage(AbstractMessage message) {
         if(message instanceof MediatorRequest) {
@@ -314,13 +328,14 @@ public class Agent implements MessageHandler{
     /**
      * Handles the MedaitorRequest mesage by calculating the production arrays based on the demand
      * and the provided solution of the mediator.
-     * @param req MediatorRequest containing the demands and solutions
+     * @param req
+     *          MediatorRequest containing the demands and solutions
      * @return AgentResponse object containing the production arrays, costs and selection
      * */
     protected AgentResponse handleMediatorRequest(MediatorRequest req) {
         Solution proposal;
-        Integer[] productionArray;
-        Integer[] productionArray_temp;
+        Integer[] adaptedProductionArray;
+        Integer[] realProductionArray;
         double cost;
         double best_solution_costs = 0;
 
@@ -335,15 +350,19 @@ public class Agent implements MessageHandler{
         for(Map.Entry<Integer, Solution> entry : solutions.entrySet()) {
             proposal = entry.getValue();
 
-            //System.out.println("solution: " + proposal.toString());
-
-            //store the calculated array
-            productionArray_temp = getProductionArray(proposal.getDemands(), proposal.getSolution());
-            productionArray = Arrays.copyOfRange(productionArray_temp, 1, productionArray_temp.length);
-            productionArrays.put(i, productionArray);
+            // store the calculated array
+            // The items that need to be retrieved from storage are counted in the costs, but they are
+            // not sent to the mediator as new demands. In order not to lose them or to give opponents
+            // a competitive advantage, the items from the storage are added to the first bucket.
+            realProductionArray = getProductionArray(proposal.getDemands(), proposal.getSolution());
+            adaptedProductionArray = Arrays.copyOfRange(realProductionArray, 1, realProductionArray.length);
+            if(COST_CORRECTION_FACTOR == 1) {
+                adaptedProductionArray[0] += realProductionArray[0];
+            }
+            productionArrays.put(i, adaptedProductionArray);
 
             //store the calculated costs
-            cost = getProductionCosts(productionArray_temp, proposal.getDemands());
+            cost = getProductionCosts(realProductionArray, proposal.getDemands());
             costs.put(i, cost);
 
             //update the selected solution if possible
@@ -359,7 +378,8 @@ public class Agent implements MessageHandler{
 
     /**
      * Handles an EndNegotiation message by printing the final result to sysout.
-     * @param msg EndNegotiation message from the mediator
+     * @param msg
+     *          EndNegotiation message from the mediator
      * @return 0 for success (currently no error defined)
      * */
     protected int handleEndNegotiation(EndNegotiation msg) {
@@ -381,7 +401,8 @@ public class Agent implements MessageHandler{
     /**
      * Handles an ErrorMessage by printing the error message. Since the agent is operating
      * stateless (agent does not remember previous states), there is nothing else to do.
-     * @param errmsg ErrorMessage message from the mediator
+     * @param errmsg
+     *          ErrorMessage message from the mediator
      * @return 0 for success (currently no error defined)
      * */
     protected int handleErrorMessage(ErrorMessage errmsg) {
