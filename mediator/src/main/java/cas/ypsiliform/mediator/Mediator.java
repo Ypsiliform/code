@@ -175,10 +175,7 @@ public class Mediator implements Runnable {
 		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
 
 		proposals.forEach((pos, proposal) -> {
-			Solution sol = new Solution();
-			sol.setSolution(proposal.solution.sliceForAgent(current.getId()));
-			sol.setDemands(proposal.demands);
-			solutionsMap.put(pos, sol);
+			solutionsMap.put(pos, getSolutionMessage(current.getId(), proposal));
 		});
 
 		MediatorRequest request = new MediatorRequest();
@@ -232,6 +229,13 @@ public class Mediator implements Runnable {
 		return result;
 	}
 
+	private Solution getSolutionMessage(int agentId, Proposal proposal) {
+		Solution sol = new Solution();
+		sol.setSolution(proposal.solution.sliceForAgent(agentId - 1));
+		sol.setDemands(proposal.demands);
+		return sol;
+	}
+
 	private Thenable<Void> endNegotiationRecursive(AgentProxy current, Proposal chosenSolution) {
 		List<Thenable> runningMessages = new ArrayList<Thenable>();
 
@@ -244,9 +248,7 @@ public class Mediator implements Runnable {
 		// previous agent into message
 		Map<Integer, Solution> solutionsMap = new HashMap<Integer, Solution>();
 
-		Solution sol = new Solution();
-		sol.setSolution(chosenSolution.solution.sliceForAgent(current.getId()));
-		sol.setDemands(chosenSolution.demands);
+		Solution sol = getSolutionMessage(current.getId(), chosenSolution);
 		solutionsMap.put(1, sol);
 
 		MediatorRequest request = new MediatorRequest();
