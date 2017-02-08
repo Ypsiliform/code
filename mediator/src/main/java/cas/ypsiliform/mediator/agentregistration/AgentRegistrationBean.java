@@ -43,6 +43,16 @@ public class AgentRegistrationBean
     @Resource
     private ManagedExecutorService service;
 
+    public AgentRegistrationBean()
+    {
+
+    }
+
+    public AgentRegistrationBean(ManagedExecutorService service)
+    {
+        this.service = service;
+    }
+
     @Override
     @Asynchronous
     public void onNewAgentRegistration(@Observes NewMessageEvent event)
@@ -65,10 +75,12 @@ public class AgentRegistrationBean
                                             event.getSession());
             agentMap.put(agent.getId(), new AgentProxy(agent));
             configAgentMap.put(agent.getConfig(), agentMap);
-
+            LOGGER.fine("before build tree and checkCache:" + configAgentMap
+                + " cache = " + requiresCache);
             buildTree(agentMap, agent, regMsg.getRequires());
             checkCache(regMsg.getConfig(), agentMap);
-
+            LOGGER.fine("after build tree and checkCache:" + configAgentMap
+                + " cache = " + requiresCache);
             if ( agentMap.size() == 5 )
             {
                 LOGGER.log(Level.FINE, "5 agent are registered start mediator");
@@ -123,6 +135,7 @@ public class AgentRegistrationBean
                 if ( map == null )
                 {
                     map = new HashMap<>();
+                    requiresCache.put(agent.getConfig(), map);
                 }
                 map.put(agent.getId(), requires);
                 return false;
@@ -170,6 +183,18 @@ public class AgentRegistrationBean
             .filter(agent -> agent.isMySessionId(id))
             .findFirst()
             .orElseGet(null);
+    }
+
+    //for testing
+    public Map<String, Map<Integer, List<Integer>>> getRequiresCache()
+    {
+        return requiresCache;
+    }
+
+    //for testing
+    public Map<String, Map<Integer, AgentProxy>> getConfigAgentMap()
+    {
+        return configAgentMap;
     }
 
 }
