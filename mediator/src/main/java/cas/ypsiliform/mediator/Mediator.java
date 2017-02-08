@@ -85,8 +85,8 @@ public class Mediator implements Runnable {
 				});
 
 				int maxVotes = 0;
-				for (int j = 1; j < histogram.length; j++) {
-					maxVotes = Math.max(histogram[j - 1], histogram[j]);
+				for (int j = 0; j < histogram.length; j++) {
+					maxVotes = Math.max(maxVotes, histogram[j]);
 				}
 
 				solutions.clear();
