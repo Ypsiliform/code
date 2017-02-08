@@ -1,11 +1,13 @@
 package cas.ypsiliform.agent.test;
 
 import cas.ypsiliform.messages.AgentResponse;
+import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.MediatorRequest;
 import cas.ypsiliform.messages.Solution;
 import org.junit.Test;
 import cas.ypsiliform.agent.Agent;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,8 +22,8 @@ public class AgentTest {
     //innerclass that makes use of the protected methods to make them public, since only public methods can be tested
     private class AgentTestHelper extends Agent{
 
-        public AgentTestHelper(double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children) {
-            super(setupCost,storageCost, productionLimit, children);
+        public AgentTestHelper(int id, double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children, URI websocketAddr) {
+            super(id, setupCost,storageCost, productionLimit, children, websocketAddr);
         }
 
         public Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
@@ -39,11 +41,15 @@ public class AgentTest {
         public AgentResponse handleMediatorRequest(MediatorRequest req) {
             return super.handleMediatorRequest(req);
         }
+
+        public int handleEndNegotiation(EndNegotiation msg) {
+            return super.handleEndNegotiation(msg);
+        }
     }
 
     @Test
     public void getProductionArray() throws Exception {
-        AgentTestHelper agent = new AgentTestHelper(10.0,0.5,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, 10.0,0.5,70,new ArrayList<Integer>(2), null);
 
         //set the init values for testing
         Integer demands_1[]             = {0, 0, 100, 100, 50};
@@ -72,7 +78,7 @@ public class AgentTest {
         double setupCosts = 10;
         double storageCosts = 0.5;
         double expectedCosts = 0;
-        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, setupCosts,storageCosts,70,new ArrayList<Integer>(2), null);
 
         //check that  0 is caught
         assertEquals(expectedCosts, agent.getInitCosts(0), 0);
@@ -101,7 +107,7 @@ public class AgentTest {
         Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
         Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
         Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
-        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, setupCosts,storageCosts,70,new ArrayList<Integer>(2), null);
 
         expectedCosts = agent.getInitCosts(40)
                 + 3 * setupCosts
@@ -140,7 +146,7 @@ public class AgentTest {
         //create the AgentTestHelper
         double setupCosts = 10;
         double storageCosts = 0.5;
-        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, setupCosts,storageCosts,70,new ArrayList<Integer>(2), null);
 
         //define the demands, production restrictions and expected results
         Integer demands[]               = {0, 0, 100, 100, 50};
@@ -205,4 +211,20 @@ public class AgentTest {
         assertEquals(res, gen_res);
     }
 
+
+    @Test
+    public void handleEndNegotiation(){
+        AgentTestHelper agent = new AgentTestHelper(1, 10,0.5,70,new ArrayList<Integer>(2), null);
+        //create the EndNegotiation message
+        EndNegotiation msg = new EndNegotiation();
+        Solution solution = new Solution();
+        Integer demands[]               = {0, 0, 100, 100, 50};
+        boolean productionDays[]        = {true, true, false, true, false};
+        solution.setDemands(demands);
+        solution.setSolution(productionDays);
+        msg.setSolution(solution);
+
+        agent.handleEndNegotiation(msg);
+
+    }
 }
