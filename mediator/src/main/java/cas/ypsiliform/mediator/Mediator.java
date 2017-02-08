@@ -251,7 +251,7 @@ public class Mediator implements Runnable {
 			// prepare recursion: Get full solution (not only view for previous
 			// agent) and secondary demands
 
-			Integer[] demandVariant = agentDemandVariants.get(0);
+			Integer[] demandVariant = agentDemandVariants.get(1);
 			assert demandVariant.length == Constants.Encoding.NUMBER_OF_PERIODS : "Number of secondary demands should equal number of periods";
 
 			Proposal nextIterationSolution = new Proposal(chosenSolution.solution, demandVariant);
