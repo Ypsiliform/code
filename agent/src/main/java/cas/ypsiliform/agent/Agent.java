@@ -4,6 +4,7 @@ import cas.ypsiliform.agent.websocket.MessageHandler;
 import cas.ypsiliform.agent.websocket.WebsocketClient;
 import cas.ypsiliform.messages.*;
 
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -12,24 +13,40 @@ import java.util.Map;
 
 public class Agent implements MessageHandler{
 
-    private double setupCost;
-    private double storageCost;
-    private int productionLimit;
-    private ArrayList<Integer> children;
-    private WebsocketClient client;
-    private int id;
-    private URI websocketAddr;
+    private int id;                         // ID of the agent, starting from 1
+    private double setupCost;               // costs for producing in this period
+    private double storageCost;             // costs per unit per period for storing
+    private int productionLimit;            // maximum production capacity per period
+    private Integer[] productionTarget;     // targeted outcome, only relevant for agent #1
+    private ArrayList<Integer> children;    // children of this agent in the production line
+    private URI websocketAddr;              // Address of the websocket
+    private WebsocketClient client;         // Mediator object to send data to once connected
+    private String confId;                  // ID of the configuration that is currently used
 
     /**
-     * Agent constructor to initialize an agent
+     * Minimal agent configuration for testing purposes
      * */
-    public Agent(int id, double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children, URI websocketAddr) {
+    public Agent(int id, double setupCost, double storageCost, int productionLimit) {
+        this.id = id;
+        this.storageCost = storageCost;
+        this.setupCost = setupCost;
+        this.productionLimit = productionLimit;
+    }
+
+    /**
+     * Normal constructor to set all parameters
+     * */
+    public Agent(int id, double setupCost, double storageCost, int productionLimit,
+                 ArrayList<Integer> children, URI websocketAddr, Integer[] productionTarget, String confId) {
+        //set the parameters
         this.id = id;
         this.setupCost = setupCost;
         this.storageCost = storageCost;
         this.productionLimit = productionLimit;
         this.children = children;
         this.websocketAddr = websocketAddr;
+        this.productionTarget = productionTarget;
+        this.confId = confId;
     }
 
     public double getSetupCost() {
@@ -86,6 +103,70 @@ public class Agent implements MessageHandler{
 
     public void setWebsocketAddr(URI websocketAddr) {
         this.websocketAddr = websocketAddr;
+    }
+
+    public Integer[] getProductionTarget() {
+        return productionTarget;
+    }
+
+    public void setProductionTarget(Integer[] productionTarget) {
+        this.productionTarget = productionTarget;
+    }
+
+    public String getConfId() {
+        return confId;
+    }
+
+    public void setConfId(String confId) {
+        this.confId = confId;
+    }
+
+    /******************************
+     * Connection setup and registering
+     ******************************/
+
+    public int startConnection() throws ConnectException {
+        //open the websocket
+        URI url = this.websocketAddr;
+        if(url == null) {
+            try {
+                url = new URI("ws://localhost:8080/mediator/mediator");
+            } catch (URISyntaxException e) {
+                throw new ConnectException("Connection to " + this.websocketAddr.toString() + " failed");
+            }
+        }
+        this.client = new WebsocketClient(url);
+
+        //register the agent as message handle
+        client.addMessageHandler(this);
+
+        //register the agent with the mediator
+        registerAgent();
+
+        return 0;
+    }
+
+
+    /**
+     * Builds an AgentRegistration message and registers itself to the mediator.
+     * If no connection is possible, a ConnectionException is thrown.
+     * */
+    private void registerAgent() throws ConnectException {
+        //build the registration
+        AgentRegistration registration = new AgentRegistration();
+        registration.setId(this.id);
+        registration.setConfig(this.confId);
+        registration.setRequires(this.children);
+
+        //agent #1 must also add the demand
+        if(this.id == 1) {
+            registration.setDemand(this.productionTarget);
+        }
+
+        //send out the registration
+        if(client == null)
+            throw new ConnectException("No connection to " + this.websocketAddr.toString() + " established. Can't send registration.");
+        client.sendMessage(registration);
     }
 
     /******************************
@@ -200,28 +281,6 @@ public class Agent implements MessageHandler{
         return production_array;
     }
 
-
-    /**
-     * Creates a websocket and connects it to the provided URI.
-     * @param websocketAddr URI of the websocket
-     * @return 0 if successful
-     * */
-    private int createWebsocket(URI websocketAddr) {
-        URI url = websocketAddr;
-        if(websocketAddr == null) {
-            try {
-                url = new URI("ws://localhost:8080/mediator/mediator");
-            } catch (URISyntaxException e) {
-                e.printStackTrace();
-                return -1;
-            }
-        }
-
-        this.client = new WebsocketClient(url);
-        return 0;
-    }
-
-
     /******************************
      *  Message handling routines
      ******************************/
@@ -237,14 +296,15 @@ public class Agent implements MessageHandler{
      * @param message    Incoming message that needs handling
      * */
     public void onNewMessage(AbstractMessage message) {
-
-        //depending on the messagetype, call the corresponding messagehandler
         if(message instanceof MediatorRequest) {
+            //process the message and return the AgentResponse
             AgentResponse res = handleMediatorRequest((MediatorRequest) message);
             this.client.sendMessage(res);
         } else if (message instanceof EndNegotiation) {
+            //only print the contents for logging / statistic purposes
             handleEndNegotiation((EndNegotiation) message);
         } else if (message instanceof ErrorMessage) {
+            //only print the error message
             handleErrorMessage((ErrorMessage) message);
         } else {
             System.out.println("Unknown message " + message.toString());
