@@ -144,4 +144,18 @@ public class SolutionProposalTest {
 		
 		Assert.assertFalse("After mutation the bit strings should no longer match.", Arrays.equals(mutatedCut.sliceForAgent(0), mutatedCut.sliceForAgent(1)));
 	}
+	
+	@Test
+	public void toString__() throws Exception {
+		SolutionProposalTestHelper cut = new SolutionProposalTestHelper(2,
+				new boolean[2 * Constants.Encoding.NUMBER_OF_PERIODS]);
+		
+		// currently the entire bit string is "false"
+		Assert.assertEquals("000000000000000000000000", cut.toString());
+		
+		SolutionProposal mutatedCut = cut.mutate();
+		// one mutation changed one bit
+		
+		Assert.assertTrue("String should contain at least one 1", mutatedCut.toString().contains("1"));
+	}
 }
