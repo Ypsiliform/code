@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import javax.annotation.Resource;
@@ -16,7 +18,7 @@ import javax.ejb.Local;
 import javax.ejb.Lock;
 import javax.ejb.LockType;
 import javax.ejb.Singleton;
-import javax.enterprise.concurrent.ManagedThreadFactory;
+import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.enterprise.event.Observes;
 
 import cas.ypsiliform.mediator.Mediator;
@@ -30,6 +32,8 @@ import cas.ypsiliform.messages.AgentRegistration;
 public class AgentRegistrationBean
     implements SessionRepository
 {
+    private static final Logger LOGGER =
+        Logger.getLogger(AgentRegistrationBean.class.getName());
 
     private Map<String, Map<Integer, List<Integer>>> requiresCache =
         new HashMap<>();
@@ -37,7 +41,17 @@ public class AgentRegistrationBean
         new HashMap<>();
 
     @Resource
-    private ManagedThreadFactory managedThreadFactory;
+    private ManagedExecutorService service;
+
+    public AgentRegistrationBean()
+    {
+
+    }
+
+    public AgentRegistrationBean(ManagedExecutorService service)
+    {
+        this.service = service;
+    }
 
     @Override
     @Asynchronous
@@ -45,6 +59,9 @@ public class AgentRegistrationBean
     {
         if ( event.getMessage() instanceof AgentRegistration )
         {
+            LOGGER.log(Level.FINE,
+                       "new agentregistration msg received : "
+                           + event.getMessage());
             AgentRegistration regMsg = (AgentRegistration) event.getMessage();
             Map<Integer, AgentProxy> agentMap =
                 configAgentMap.get(regMsg.getConfig());
@@ -58,18 +75,21 @@ public class AgentRegistrationBean
                                             event.getSession());
             agentMap.put(agent.getId(), new AgentProxy(agent));
             configAgentMap.put(agent.getConfig(), agentMap);
-
+            LOGGER.fine("before build tree and checkCache:" + configAgentMap
+                + " cache = " + requiresCache);
             buildTree(agentMap, agent, regMsg.getRequires());
             checkCache(regMsg.getConfig(), agentMap);
-
+            LOGGER.fine("after build tree and checkCache:" + configAgentMap
+                + " cache = " + requiresCache);
             if ( agentMap.size() == 5 )
             {
+                LOGGER.log(Level.FINE, "5 agent are registered start mediator");
                 Integer lowestKey = Collections.min(agentMap.keySet());
                 Mediator mediator = new Mediator(agentMap,
                                                  agentMap.get(lowestKey)
                                                      .getAgentData()
                                                      .getInitialDemand());
-                managedThreadFactory.newThread(mediator).start();
+                service.execute(mediator);
             }
         }
     }
@@ -115,6 +135,7 @@ public class AgentRegistrationBean
                 if ( map == null )
                 {
                     map = new HashMap<>();
+                    requiresCache.put(agent.getConfig(), map);
                 }
                 map.put(agent.getId(), requires);
                 return false;
@@ -162,6 +183,18 @@ public class AgentRegistrationBean
             .filter(agent -> agent.isMySessionId(id))
             .findFirst()
             .orElseGet(null);
+    }
+
+    //for testing
+    public Map<String, Map<Integer, List<Integer>>> getRequiresCache()
+    {
+        return requiresCache;
+    }
+
+    //for testing
+    public Map<String, Map<Integer, AgentProxy>> getConfigAgentMap()
+    {
+        return configAgentMap;
     }
 
 }

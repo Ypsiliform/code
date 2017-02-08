@@ -8,6 +8,7 @@
   	<module>mediator</module>
   	<module>agent</module>
   	<module>messages</module>
+  	<module>starter</module>
   </modules>
   
   <properties>
