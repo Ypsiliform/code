@@ -82,6 +82,8 @@ public class AgentProxy
 
     public Thenable<AgentResponse> sendSolutionProposals(MediatorRequest solution)
     {
+        assert responseAble == null || responseAble
+            .isResolved() == true : "don't support parallel messages";
         responseAble = new Thenable<>();
         data.sendMessage(solution);
         return responseAble;
