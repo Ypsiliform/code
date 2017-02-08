@@ -1,11 +1,16 @@
 package cas.ypsiliform.agent.test;
 
 import cas.ypsiliform.messages.AgentResponse;
+import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.MediatorRequest;
+import cas.ypsiliform.messages.Solution;
 import org.junit.Test;
 import cas.ypsiliform.agent.Agent;
 
+import java.net.URI;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -17,8 +22,8 @@ public class AgentTest {
     //innerclass that makes use of the protected methods to make them public, since only public methods can be tested
     private class AgentTestHelper extends Agent{
 
-        public AgentTestHelper(double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children) {
-            super(setupCost,storageCost, productionLimit, children);
+        public AgentTestHelper(int id, double setupCost, double storageCost, int productionLimit, ArrayList<Integer> children, URI websocketAddr) {
+            super(id, setupCost,storageCost, productionLimit, children, websocketAddr);
         }
 
         public Integer[] getProductionArray(Integer[] demands, boolean[] productionDays) {
@@ -36,11 +41,15 @@ public class AgentTest {
         public AgentResponse handleMediatorRequest(MediatorRequest req) {
             return super.handleMediatorRequest(req);
         }
+
+        public int handleEndNegotiation(EndNegotiation msg) {
+            return super.handleEndNegotiation(msg);
+        }
     }
 
     @Test
     public void getProductionArray() throws Exception {
-        AgentTestHelper agent = new AgentTestHelper(10.0,0.5,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, 10.0,0.5,70,new ArrayList<Integer>(2), null);
 
         //set the init values for testing
         Integer demands_1[]             = {0, 0, 100, 100, 50};
@@ -69,7 +78,7 @@ public class AgentTest {
         double setupCosts = 10;
         double storageCosts = 0.5;
         double expectedCosts = 0;
-        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, setupCosts,storageCosts,70,new ArrayList<Integer>(2), null);
 
         //check that  0 is caught
         assertEquals(expectedCosts, agent.getInitCosts(0), 0);
@@ -98,7 +107,7 @@ public class AgentTest {
         Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
         Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
         Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
-        AgentTestHelper agent = new AgentTestHelper(setupCosts,storageCosts,70,new ArrayList<Integer>(2));
+        AgentTestHelper agent = new AgentTestHelper(1, setupCosts,storageCosts,70,new ArrayList<Integer>(2), null);
 
         expectedCosts = agent.getInitCosts(40)
                 + 3 * setupCosts
@@ -131,17 +140,91 @@ public class AgentTest {
 
     }
 
-    /*
+
     @Test
     public void handleMediatorRequest() {
+        //create the AgentTestHelper
+        double setupCosts = 10;
+        double storageCosts = 0.5;
+        AgentTestHelper agent = new AgentTestHelper(1, setupCosts,storageCosts,70,new ArrayList<Integer>(2), null);
+
+        //define the demands, production restrictions and expected results
+        Integer demands[]               = {0, 0, 100, 100, 50};
+        boolean productionDays_1[]      = {true, true, false, true, false};
+        boolean productionDays_2[]      = {true, true, true, true, true};
+        boolean productionDays_3[]      = {true, false, false, false, false};
+        boolean productionDays_4[]      = {true, false, false, true, false};
+        Integer expectedProduction_1[]  = {40, 70, 70, 0, 70, 0};
+        Integer expectedProduction_2[]  = {0, 0, 60, 70, 70, 50};
+        Integer expectedProduction_3[]  = {180, 70, 0, 0, 0, 0};
+        Integer expectedProduction_4[]  = {110, 70, 0, 0, 70, 0};
+
+        //Create 4 solutions that should be put into the MediatorRequest
+        Solution solution_1 = new Solution();
+        Solution solution_2 = new Solution();
+        Solution solution_3 = new Solution();
+        Solution solution_4 = new Solution();
+
+        //fill the solutions and add them
+        solution_1.setDemands(demands);
+        solution_1.setSolution(productionDays_1);
+        solution_2.setDemands(demands);
+        solution_2.setSolution(productionDays_2);
+        solution_3.setDemands(demands);
+        solution_3.setSolution(productionDays_3);
+        solution_4.setDemands(demands);
+        solution_4.setSolution(productionDays_4);
+
+        Map<Integer, Solution> allSolutions = new HashMap<>();
+        allSolutions.put(0, solution_1);
+        allSolutions.put(1, solution_2);
+        allSolutions.put(2, solution_3);
+        allSolutions.put(3, solution_4);
 
         //build the Mediatorrequest object
         MediatorRequest req = new MediatorRequest();
-        req.setSolutions();
+        req.setSolutions(allSolutions);
 
-        //build the expected answer
+        //build the expected answers
+        Map<Integer, Integer[]> allNewDemands = new HashMap<>();
+        allNewDemands.put(0, expectedProduction_1);
+        allNewDemands.put(1, expectedProduction_2);
+        allNewDemands.put(2, expectedProduction_3);
+        allNewDemands.put(3, expectedProduction_4);
+
+        //calculate the expected costs
+        Map<Integer, Double> allCosts = new HashMap<>();
+        allCosts.put(0, agent.getProductionCosts(expectedProduction_1, demands));
+        allCosts.put(1, agent.getProductionCosts(expectedProduction_2, demands));
+        allCosts.put(2, agent.getProductionCosts(expectedProduction_3, demands));
+        allCosts.put(3, agent.getProductionCosts(expectedProduction_4, demands));
+
+        //build the response agent
         AgentResponse res = new AgentResponse();
-        res
+        res.setDemands(allNewDemands);
+        res.setCosts(allCosts);
+        res.setSelection(1);
+
+        //get the response from the function
+        AgentResponse gen_res = agent.handleMediatorRequest(req);
+
+        assertEquals(res, gen_res);
     }
-    */
+
+
+    @Test
+    public void handleEndNegotiation(){
+        AgentTestHelper agent = new AgentTestHelper(1, 10,0.5,70,new ArrayList<Integer>(2), null);
+        //create the EndNegotiation message
+        EndNegotiation msg = new EndNegotiation();
+        Solution solution = new Solution();
+        Integer demands[]               = {0, 0, 100, 100, 50};
+        boolean productionDays[]        = {true, true, false, true, false};
+        solution.setDemands(demands);
+        solution.setSolution(productionDays);
+        msg.setSolution(solution);
+
+        agent.handleEndNegotiation(msg);
+
+    }
 }

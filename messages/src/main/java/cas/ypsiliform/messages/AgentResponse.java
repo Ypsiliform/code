@@ -1,5 +1,6 @@
 package cas.ypsiliform.messages;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -55,4 +56,35 @@ public class AgentResponse
         return builder.toString();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AgentResponse that = (AgentResponse) o;
+
+        if(that.getDemands().size() != demands.size())
+            return false;
+
+        for(Map.Entry<Integer, Integer[]> entry : demands.entrySet()) {
+            if( ! that.getDemands().containsKey(entry.getKey())) {
+                return false;
+            }
+
+            if (!Arrays.equals(that.getDemands().get(entry.getKey()), entry.getValue())) {
+                return false;
+            }
+        }
+
+        if (selection != that.selection) return false;
+        return costs.equals(that.costs);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = selection;
+        result = 31 * result + demands.hashCode();
+        result = 31 * result + costs.hashCode();
+        return result;
+    }
 }
