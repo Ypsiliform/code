@@ -23,18 +23,31 @@ import cas.ypsiliform.mediator.negotiation.SolutionProposal;
 import cas.ypsiliform.messages.MediatorRequest;
 import cas.ypsiliform.messages.Solution;
 
+/**
+ * Mediator which moderates a negotiation between a given list of agents
+ * @author Michael Müller
+ */
 public class Mediator implements Runnable {
 	private static Logger log = Logger.getLogger(Mediator.class.getSimpleName());
 
 	private final Map<Integer, AgentProxy> agents;
 	private final Integer[] primaryDemands;
 
+	/**
+	 * Mediator takes a list of agents that take part in the negotiation and the primary demands,
+	 * which are the basis for the negotiation.
+	 * @param agents
+	 * @param primaryDemands
+	 */
 	public Mediator(Map<Integer, AgentProxy> agents, Integer[] primaryDemands) {
 		// validate consecutive IDs
 		for (int i = 1; i <= agents.size(); i++) {
 			if (!agents.containsKey(i))
 				throw new IllegalArgumentException();
 		}
+		
+		if (agents.size() <= 2)
+			throw new IllegalArgumentException();
 
 		if (primaryDemands.length != Constants.Encoding.NUMBER_OF_PERIODS) {
 			throw new IllegalArgumentException();
@@ -103,13 +116,25 @@ public class Mediator implements Runnable {
 		});
 	}
 
+	/**
+	 * Determine how many solution proposals will be sent per iteration of the negotiation
+	 * We have to send less proposals than the number of agents to avoid stalemate situations,
+	 * but as many as possible to explore the solution space faster.
+	 */
 	private int getNumberOfProposals() {
+		assert agents.size() > 2 : "Algorithm can only handle negotiations with more than two agents";
 		return agents.size() - 1;
 	}
 
+	/**
+	 * n+p strategy to generate offspring from a set of parents.
+	 * @param numberOfSolutions Requested number of solutions to be returned
+	 * @param parents Parents from which to mutate new solutions
+	 * @return parents + mutations of parents
+	 */
 	private SolutionProposal[] generateOffspring(int numberOfSolutions, SolutionProposal... parents) {
 		SolutionProposal[] result = new SolutionProposal[numberOfSolutions];
-
+		
 		int i = 0;
 		for (; i < parents.length && i < numberOfSolutions; i++) {
 			result[i] = parents[i];
@@ -122,6 +147,14 @@ public class Mediator implements Runnable {
 		return result;
 	}
 
+	/**
+	 * Recursively traverse the supply chain and send the demands of higher levels to the next levels.
+	 * Uses asynchronous communication with agents and can communicate with multiple agents on the same level
+	 * at the same time.
+	 * @param current Current agent to communicate with. Will propagate the current agent's demands to the next level
+	 * @param proposals Solution proposals to communicate to the agent
+	 * @return A map of the agents' preferences (agent id => solution id)
+	 */
 	private Thenable<Map<Integer, Integer>> recursiveNegotiation(AgentProxy current, Map<Integer, Proposal> proposals) {
 		List<Thenable> nextIteration = new ArrayList<Thenable>();
 
