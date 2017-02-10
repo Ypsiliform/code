@@ -1,4 +1,4 @@
-package cas.ypsiliform.mediator;
+package cas.ypsiliform.mediator.negotiation;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -8,9 +8,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import cas.ypsiliform.Constants;
+import cas.ypsiliform.mediator.Mediator;
 import cas.ypsiliform.mediator.async.Thenable;
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
-import cas.ypsiliform.mediator.negotiation.SolutionProposal;
 import cas.ypsiliform.messages.AgentResponse;
 
 /**

@@ -23,7 +23,6 @@ import javax.enterprise.event.Observes;
 
 import cas.ypsiliform.mediator.Mediator;
 import cas.ypsiliform.mediator.MediatorFactory;
-import cas.ypsiliform.mediator.VoteBasedMediator;
 import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.mediator.websocket.SessionRepository;

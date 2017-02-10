@@ -1,4 +1,4 @@
-package cas.ypsiliform.mediator;
+package cas.ypsiliform.mediator.negotiation;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -6,11 +6,8 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 import cas.ypsiliform.Constants;
-import cas.ypsiliform.mediator.async.Thenable;
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
-import cas.ypsiliform.mediator.negotiation.AgentVisitor;
 import cas.ypsiliform.mediator.negotiation.AgentVisitor.VisitorResult;
-import cas.ypsiliform.mediator.negotiation.SolutionProposal;
+import cas.ypsiliform.mediator.async.Thenable;
 import cas.ypsiliform.messages.AgentResponse;
 import cas.ypsiliform.messages.EndNegotiation;
 import cas.ypsiliform.messages.MediatorRequest;

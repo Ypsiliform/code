@@ -3,6 +3,7 @@ package cas.ypsiliform.mediator;
 import java.util.Map;
 
 import cas.ypsiliform.mediator.negotiation.AgentProxy;
+import cas.ypsiliform.mediator.negotiation.VoteBasedMediator;
 
 public class MediatorFactory {
 	public enum Strategy {
