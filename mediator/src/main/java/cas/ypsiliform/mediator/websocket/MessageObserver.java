@@ -11,8 +11,9 @@ import cas.ypsiliform.messages.AgentRegistration;
 @Stateless
 @LocalBean
 public class MessageObserver {
+	private static Logger log = Logger.getLogger(MessageObserver.class.getName());
 
 	public void onMessage(@Observes AgentRegistration msg) {
-		Logger.getLogger(MessageObserver.class.getName()).severe("on message test = " + msg);
+		log.finer("on message test = " + msg);
 	}
 }
