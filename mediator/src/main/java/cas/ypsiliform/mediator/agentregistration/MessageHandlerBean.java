@@ -9,7 +9,7 @@ import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
 import javax.enterprise.event.Observes;
 
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.mediator.websocket.SessionRepository;
 import cas.ypsiliform.messages.AgentResponse;

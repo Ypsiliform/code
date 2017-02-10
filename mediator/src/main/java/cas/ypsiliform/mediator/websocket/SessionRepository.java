@@ -1,6 +1,6 @@
 package cas.ypsiliform.mediator.websocket;
 
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
+import cas.ypsiliform.mediator.AgentProxy;
 
 public interface SessionRepository
 {

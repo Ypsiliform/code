@@ -21,9 +21,9 @@ import javax.ejb.Singleton;
 import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.enterprise.event.Observes;
 
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.Mediator;
 import cas.ypsiliform.mediator.MediatorFactory;
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.mediator.websocket.SessionRepository;
 import cas.ypsiliform.messages.AgentRegistration;

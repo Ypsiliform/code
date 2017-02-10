@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.async.Action;
 import cas.ypsiliform.mediator.async.Function2;
 import cas.ypsiliform.mediator.async.Thenable;

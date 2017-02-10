@@ -7,6 +7,7 @@ import java.util.logging.Logger;
 
 import cas.ypsiliform.Constants;
 import cas.ypsiliform.mediator.negotiation.AgentVisitor.VisitorResult;
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.async.Thenable;
 import cas.ypsiliform.messages.AgentResponse;
 import cas.ypsiliform.messages.EndNegotiation;

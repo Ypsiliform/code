@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Logger;
 
 import cas.ypsiliform.Constants;
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.Mediator;
 import cas.ypsiliform.mediator.async.Thenable;
 import cas.ypsiliform.messages.AgentResponse;
