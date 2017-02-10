@@ -1,16 +1,12 @@
 package cas.ypsiliform.mediator.async;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
-
-import javax.validation.constraints.Null;
 
 /**
  * Tool for asynchronous programming. Thenables are the glue to build a pipeline
@@ -18,8 +14,6 @@ import javax.validation.constraints.Null;
  * the thenable, the next actions are executed.
  */
 public class Thenable<T> {
-	private static Logger log = Logger.getLogger(Thenable.class.getName());
-	
 	private static Timer timeout = new Timer(true);
 	private Object waitHandle = new Object();
 
@@ -29,15 +23,16 @@ public class Thenable<T> {
 	private boolean resolving = false;
 
 	public static Thenable<Object[]> whenAll(final List<Thenable> elements) {
-		// ConcurrentHashMap doesn't allow null values. Need to wrap them in another object
+		// ConcurrentHashMap doesn't allow null values. Need to wrap them in
+		// another object
 		class Nullable<O> {
 			public final O value;
-			
+
 			public Nullable(O value) {
 				this.value = value;
 			}
 		}
-		
+
 		final Map<Integer, Nullable<Object>> values = new ConcurrentHashMap<Integer, Nullable<Object>>(elements.size());
 		final Thenable<Object[]> asyncReturn = new Thenable<Object[]>();
 
@@ -61,13 +56,15 @@ public class Thenable<T> {
 				}
 			}
 		}
-		
-		assert elements.size() > 0;
 
-		int i = 0;
-		for (Thenable element : elements) {
-			element.then(new IterativeAction(i));
-			i++;
+		if (elements.size() == 0)
+			asyncReturn.resolve(new Object[0]);
+		else {
+			int i = 0;
+			for (Thenable element : elements) {
+				element.then(new IterativeAction(i));
+				i++;
+			}
 		}
 
 		return asyncReturn;
