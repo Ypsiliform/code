@@ -5,13 +5,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
-import cas.ypsiliform.mediator.Mediator;
+import cas.ypsiliform.mediator.VoteBasedMediator;
 import cas.ypsiliform.mediator.async.Action;
 import cas.ypsiliform.mediator.async.Function2;
 import cas.ypsiliform.mediator.async.Thenable;
 
 public class AgentVisitor {
-	private static Logger log = Logger.getLogger(Mediator.class.getName());
+	private static Logger log = Logger.getLogger(AgentVisitor.class.getName());
 
 	private final Map<Integer, AgentProxy> agents;
 	private final int startAgentID;
