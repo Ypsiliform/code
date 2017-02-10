@@ -26,13 +26,13 @@ public class AgentVisitor {
 
 	public <Parameter, IterationResult, Result> Thenable<Result> visit(Parameter initialParameter,
 			Function2<AgentProxy, Parameter, Thenable<VisitorResult<Parameter, IterationResult>>> activity,
-			Function2<IterationResult, Object[], Result> reduction) {
+			ReductionFunction<IterationResult, Result> reduction) {
 		return visitRecursive(agents.get(startAgentID), initialParameter, activity, reduction);
 	}
 
 	private <Parameter, IterationResult, Result> Thenable<Result> visitRecursive(AgentProxy current, Parameter param,
 			Function2<AgentProxy, Parameter, Thenable<VisitorResult<Parameter, IterationResult>>> activity,
-			Function2<IterationResult, Object[], Result> reduction) {
+			ReductionFunction<IterationResult, Result> reduction) {
 
 		Thenable<Result> result = new Thenable<Result>();
 
@@ -52,13 +52,13 @@ public class AgentVisitor {
 				if (reduction == null)
 					result.resolve(null);
 				else
-					result.resolve(reduction.perform(currentResult.CurrentIterationResult, null));
+					result.resolve(reduction.reduce(currentResult.CurrentIterationResult, null));
 			} else {
 				Thenable.whenAll(nextIteration).then((Action<Object[]>) nextIterationResult -> {
 					Result r = null;
 
 					if (reduction != null) {
-						r = reduction.perform(currentResult.CurrentIterationResult, nextIterationResult);
+						r = reduction.reduce(currentResult.CurrentIterationResult, nextIterationResult);
 					}
 
 					result.resolve(r);

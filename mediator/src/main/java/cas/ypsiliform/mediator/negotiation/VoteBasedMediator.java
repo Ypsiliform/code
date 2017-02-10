@@ -55,7 +55,7 @@ public class VoteBasedMediator extends AbstractMediator implements Mediator {
 			}
 
 			visitor.<Map<Integer, Proposal>, AgentResponse, Map<Integer, Integer>>visit(proposals,
-					this::collectResponses, this::reduceToFrequencyHistogram).then(histogram -> {
+					this::collectResponses, new HistogramReduction(getNumberOfProposals())).then(histogram -> {
 						int maxVotes = histogram.values().stream().max(Integer::compare).orElse(0);
 
 						solutions.clear();
@@ -82,21 +82,5 @@ public class VoteBasedMediator extends AbstractMediator implements Mediator {
 				});
 
 		log.info("Negotiation ended");
-	}
-
-	private Map<Integer, Integer> reduceToFrequencyHistogram(AgentResponse response, Object[] otherVotes) {
-		Map<Integer, Integer> histogram = new HashMap<Integer, Integer>(getNumberOfProposals());
-		histogram.put(response.getSelection(), 1);
-
-		if (otherVotes != null)
-			for (int j = 0; j < otherVotes.length; j++) {
-				((Map<Integer, Integer>) otherVotes[j]).forEach((key, count) -> {
-					histogram.merge(key, count, (prev, next) -> {
-						return prev + next;
-					});
-				});
-			}
-
-		return histogram;
 	}
 }
