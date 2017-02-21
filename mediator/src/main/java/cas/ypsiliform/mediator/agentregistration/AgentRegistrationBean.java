@@ -88,7 +88,7 @@ public class AgentRegistrationBean
                 Integer lowestKey = Collections.min(agentMap.keySet());
                 
                 Mediator mediator = MediatorFactory.getMediator(
-                		MediatorFactory.Strategy.VOTING, agentMap, agentMap.get(lowestKey).getAgentData().getInitialDemand());
+                		MediatorFactory.Strategy.DEFAULT, agentMap, agentMap.get(lowestKey).getAgentData().getInitialDemand());
                 service.execute(mediator);
             }
         }
