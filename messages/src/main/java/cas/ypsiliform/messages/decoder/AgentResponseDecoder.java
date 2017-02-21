@@ -65,7 +65,7 @@ public class AgentResponseDecoder
     private Map<Integer, Double> getCosts(JsonArray jsonArray) {
         Map<Integer, Double> map = new HashMap<>();
         for(int i=0; i< jsonArray.size();i++) {
-            map.put(i, jsonArray.getJsonNumber(i).doubleValue());
+            map.put(i + 1, jsonArray.getJsonNumber(i).doubleValue());
         }
         return map;
     }
