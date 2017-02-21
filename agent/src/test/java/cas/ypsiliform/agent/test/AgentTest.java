@@ -181,10 +181,10 @@ public class AgentTest {
         solution_4.setSolution(productionDays_4);
 
         Map<Integer, Solution> allSolutions = new HashMap<>();
-        allSolutions.put(0, solution_1);
-        allSolutions.put(1, solution_2);
-        allSolutions.put(2, solution_3);
-        allSolutions.put(3, solution_4);
+        allSolutions.put(1, solution_1);
+        allSolutions.put(2, solution_2);
+        allSolutions.put(3, solution_3);
+        allSolutions.put(4, solution_4);
 
         //build the Mediatorrequest object
         MediatorRequest req = new MediatorRequest();
@@ -192,23 +192,23 @@ public class AgentTest {
 
         //build the expected answers
         Map<Integer, Integer[]> allNewDemands = new HashMap<>();
-        allNewDemands.put(0, expectedSolution_1);
-        allNewDemands.put(1, expectedSolution_2);
-        allNewDemands.put(2, expectedSolution_3);
-        allNewDemands.put(3, expectedSolution_4);
+        allNewDemands.put(1, expectedSolution_1);
+        allNewDemands.put(2, expectedSolution_2);
+        allNewDemands.put(3, expectedSolution_3);
+        allNewDemands.put(4, expectedSolution_4);
 
         //calculate the expected costs
         Map<Integer, Double> allCosts = new HashMap<>();
-        allCosts.put(0, agent.getProductionCosts(expectedProduction_1, demands));
-        allCosts.put(1, agent.getProductionCosts(expectedProduction_2, demands));
-        allCosts.put(2, agent.getProductionCosts(expectedProduction_3, demands));
-        allCosts.put(3, agent.getProductionCosts(expectedProduction_4, demands));
+        allCosts.put(1, agent.getProductionCosts(expectedProduction_1, demands));
+        allCosts.put(2, agent.getProductionCosts(expectedProduction_2, demands));
+        allCosts.put(3, agent.getProductionCosts(expectedProduction_3, demands));
+        allCosts.put(4, agent.getProductionCosts(expectedProduction_4, demands));
 
         //build the response agent
         AgentResponse res = new AgentResponse();
         res.setDemands(allNewDemands);
         res.setCosts(allCosts);
-        res.setSelection(1);
+        res.setSelection(2);
 
         //get the response from the function
         AgentResponse gen_res = agent.handleMediatorRequest(req);
