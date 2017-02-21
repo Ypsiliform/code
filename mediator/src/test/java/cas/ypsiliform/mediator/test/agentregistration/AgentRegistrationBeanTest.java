@@ -18,8 +18,8 @@ import javax.websocket.Session;
 
 import org.junit.Test;
 
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.agentregistration.AgentRegistrationBean;
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.messages.AgentRegistration;
 
