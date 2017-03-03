@@ -134,7 +134,7 @@ public class Main
         else if ( isUnix() )
         {
             args =
-                new String[] { "/usr/bin/bash", "-e", "java", "-jar",
+                new String[] { "/bin/bash", "-c", "java", "-jar",
                     "agent.jar", String.valueOf(id), config, url,
                     String.valueOf(storageCost), String.valueOf(setupCost),
                     Arrays.toString(demands).replaceAll("\\s+", ""),

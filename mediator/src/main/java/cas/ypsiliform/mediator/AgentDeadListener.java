@@ -1,4 +1,4 @@
-package cas.ypsiliform.mediator.negotiation;
+package cas.ypsiliform.mediator;
 
 public interface AgentDeadListener {
 	public void OnAgentDead(AgentProxy agent);

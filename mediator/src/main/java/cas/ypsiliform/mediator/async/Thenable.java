@@ -1,208 +1,204 @@
 package cas.ypsiliform.mediator.async;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Tool for asynchronous programming. Thenables are the glue to build a pipeline
  * of actions which are processed asynchronously. Once the first action resolves
  * the thenable, the next actions are executed.
  */
-public class Thenable<T>
-{
-    private static Timer timeout = new Timer(true);
-    private Object waitHandle = new Object();
+public class Thenable<T> {
+	private static Timer timeout = new Timer(true);
+	private Object waitHandle = new Object();
 
-    private LinkedList<Action<T>> actions = new LinkedList<Action<T>>();
-    private T resolve;
-    private boolean resolved = false;
-    private boolean resolving = false;
+	private LinkedList<Action<T>> actions = new LinkedList<Action<T>>();
+	private T resolve;
+	private boolean resolved = false;
+	private boolean resolving = false;
 
-    public static Thenable<Object[]> whenAll(final List<Thenable> elements)
-    {
-        final Map<Integer, Object> values = new HashMap<Integer, Object>();
-        final Thenable<Object[]> asyncReturn = new Thenable<Object[]>();
+	public static Thenable<Object[]> whenAll(final List<Thenable> elements) {
+		// ConcurrentHashMap doesn't allow null values. Need to wrap them in
+		// another object
+		class Nullable<O> {
+			public final O value;
 
-        class IterativeAction<T>
-            implements Action<T>
-        {
-            int i;
+			public Nullable(O value) {
+				this.value = value;
+			}
+		}
 
-            IterativeAction(int i)
-            {
-                this.i = i;
-            }
+		final Map<Integer, Nullable<Object>> values = new ConcurrentHashMap<Integer, Nullable<Object>>(elements.size());
+		final Thenable<Object[]> asyncReturn = new Thenable<Object[]>();
 
-            @Override
-            public void perform(T data)
-            {
-                values.put(i, data);
+		class IterativeAction<T> implements Action<T> {
+			int i;
 
-                if ( values.size() == elements.size() )
-                {
-                    Object[] vals = new Object[values.size()];
-                    for ( int i = 0; i < values.size(); i++ )
-                        vals[i] = values.get(i);
+			IterativeAction(int i) {
+				this.i = i;
+			}
 
-                    asyncReturn.resolve(vals);
-                }
-            }
-        }
+			@Override
+			public void perform(T data) {
+				values.put(i, new Nullable<Object>(data));
 
-        int i = 0;
-        for ( Thenable element : elements )
-        {
-            element.then(new IterativeAction(i));
-            i++;
-        }
+				if (values.size() == elements.size()) {
+					Object[] vals = new Object[values.size()];
+					for (int i = 0; i < values.size(); i++)
+						vals[i] = values.get(i).value;
 
-        return asyncReturn;
-    }
+					asyncReturn.resolve(vals);
+				}
+			}
+		}
 
-    public static Thenable<Object[]> whenAll(final Thenable... elements)
-    {
-        return whenAll(Arrays.asList(elements));
-    }
+		if (elements.size() == 0)
+			asyncReturn.resolve(new Object[0]);
+		else {
+			int i = 0;
+			for (Thenable element : elements) {
+				element.then(new IterativeAction(i));
+				i++;
+			}
+		}
 
-    public boolean isResolved()
-    {
-        return resolved;
-    }
+		return asyncReturn;
+	}
 
-    /**
-     * End the operation of the current action and send <param>data</param> to
-     * the next actions in the pipeline.
-     * 
-     * @param data
-     */
-    public void resolve(T data)
-    {
-        if ( resolving )
-            return;
+	public static Thenable<Object[]> whenAll(final Thenable... elements) {
+		return whenAll(Arrays.asList(elements));
+	}
 
-        resolving = true;
+	public static <T> Thenable<T> resolved(T result) {
+		Thenable<T> r = new Thenable<T>();
+		r.resolve(result);
+		return r;
+	}
 
-        for ( Action action : actions )
-            action.perform(data);
+	public boolean isResolved() {
+		return resolved;
+	}
 
-        resolve = data;
-        resolved = true;
-        synchronized ( waitHandle )
-        {
-            waitHandle.notify();
-        }
-    }
+	/**
+	 * End the operation of the current action and send <param>data</param> to
+	 * the next actions in the pipeline.
+	 * 
+	 * @param data
+	 */
+	public void resolve(T data) {
+		if (resolving)
+			return;
 
-    /**
-     * Register an action for execution when this thenable is resolved.
-     * 
-     * @param action
-     */
-    public void then(final Action<T> action)
-    {
-        this.actions.add(action);
+		resolving = true;
 
-        if ( resolved )
-            action.perform(resolve);
-    }
+		for (Action<T> action : actions)
+			action.perform(data);
 
-    /**
-     * Register an function in the pipeline which will take an argument of type
-     * <type>T</type> and emit a value of type <type>U</type> for processing by
-     * the next operations in the pipeline.
-     * 
-     * @param function
-     * @param <U>
-     * @return
-     */
-    public <U> Thenable<U> then(final Function<T, U> function)
-    {
-        final Thenable<U> asyncReturn = new Thenable<U>();
+		resolve = data;
+		resolved = true;
+		synchronized (waitHandle) {
+			waitHandle.notify();
+		}
+	}
 
-        this.then(new Action<T>() {
-            @Override
-            public void perform(T data)
-            {
-                U result = function.perform(data);
-                asyncReturn.resolve(result);
-            }
-        });
+	/**
+	 * Register an action for execution when this thenable is resolved.
+	 * 
+	 * @param action
+	 */
+	public void then(final Action<T> action) {
+		this.actions.add(action);
 
-        return asyncReturn;
-    }
+		if (resolved)
+			action.perform(resolve);
+	}
 
-    /**
-     * Resolve nested thenables (When a thenable function emits a thenable).
-     * 
-     * @param <U>
-     *        must match the type of the inner thenable. There is a runtime
-     *        exception otherwise.
-     * @return
-     */
-    public <U> Thenable<U> unnest()
-    {
-        final Thenable<U> asyncReturn = new Thenable<U>();
+	/**
+	 * Register an function in the pipeline which will take an argument of type
+	 * <type>T</type> and emit a value of type <type>U</type> for processing by
+	 * the next operations in the pipeline.
+	 * 
+	 * @param function
+	 * @param <U>
+	 * @return
+	 */
+	public <U> Thenable<U> then(final Function<T, U> function) {
+		final Thenable<U> asyncReturn = new Thenable<U>();
 
-        this.then(new Action<T>() {
-            @Override
-            public void perform(T data)
-            {
-                // its impossible to make sure only thenables of type <U> reach this point
-                // java knows the generic types at compile time, but strips all information from
-                // them at this point.
-                Thenable<U> inner = (Thenable<U>) data;
-                inner.then(new Action<U>() {
-                    @Override
-                    public void perform(U data)
-                    {
-                        asyncReturn.resolve(data);
-                    }
-                });
-            }
-        });
+		this.then(new Action<T>() {
+			@Override
+			public void perform(T data) {
+				U result = function.perform(data);
+				asyncReturn.resolve(result);
+			}
+		});
 
-        return asyncReturn;
-    }
+		return asyncReturn;
+	}
 
-    public Thenable<T> timeout(int timeoutMillis, final T fallback)
-    {
-        timeout.schedule(new TimerTask() {
-            @Override
-            public void run()
-            {
-                if ( !isResolved() )
-                    resolve(fallback);
-            }
-        }, timeoutMillis);
+	/**
+	 * Resolve nested thenables (When a thenable function emits a thenable).
+	 * 
+	 * @param <U>
+	 *            must match the type of the inner thenable. There is a runtime
+	 *            exception otherwise.
+	 * @return
+	 */
+	public <U> Thenable<U> unnest() {
+		final Thenable<U> asyncReturn = new Thenable<U>();
 
-        return this;
-    }
+		this.then(new Action<T>() {
+			@Override
+			public void perform(T data) {
+				// its impossible to make sure only thenables of type <U> reach
+				// this point
+				// java knows the generic types at compile time, but strips all
+				// information from
+				// them at this point.
+				Thenable<U> inner = (Thenable<U>) data;
+				inner.then(new Action<U>() {
+					@Override
+					public void perform(U data) {
+						asyncReturn.resolve(data);
+					}
+				});
+			}
+		});
 
-    public void wait(int timeoutMillis, Action<Void> timeoutAction)
-    {
-        try
-        {
-            synchronized ( waitHandle )
-            {
-                waitHandle.wait(timeoutMillis);
-            }
-            if ( this.isResolved() )
-            {
-                return;
-            }
-        }
-        catch ( InterruptedException e )
-        {
-            // return before timeout;
-            return;
-        }
+		return asyncReturn;
+	}
 
-        // timed out
-        timeoutAction.perform(null);
-    }
+	public Thenable<T> timeout(int timeoutMillis, final T fallback) {
+		timeout.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if (!isResolved())
+					resolve(fallback);
+			}
+		}, timeoutMillis);
+
+		return this;
+	}
+
+	public void wait(int timeoutMillis, Action<Void> timeoutAction) {
+		try {
+			synchronized (waitHandle) {
+				waitHandle.wait(timeoutMillis);
+			}
+			if (this.isResolved()) {
+				return;
+			}
+		} catch (InterruptedException e) {
+			// return before timeout;
+			return;
+		}
+
+		// timed out
+		timeoutAction.perform(null);
+	}
 }

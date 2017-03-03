@@ -21,8 +21,9 @@ import javax.ejb.Singleton;
 import javax.enterprise.concurrent.ManagedExecutorService;
 import javax.enterprise.event.Observes;
 
+import cas.ypsiliform.mediator.AgentProxy;
 import cas.ypsiliform.mediator.Mediator;
-import cas.ypsiliform.mediator.negotiation.AgentProxy;
+import cas.ypsiliform.mediator.MediatorFactory;
 import cas.ypsiliform.mediator.websocket.NewMessageEvent;
 import cas.ypsiliform.mediator.websocket.SessionRepository;
 import cas.ypsiliform.messages.AgentRegistration;
@@ -85,10 +86,9 @@ public class AgentRegistrationBean
             {
                 LOGGER.log(Level.FINE, "5 agent are registered start mediator");
                 Integer lowestKey = Collections.min(agentMap.keySet());
-                Mediator mediator = new Mediator(agentMap,
-                                                 agentMap.get(lowestKey)
-                                                     .getAgentData()
-                                                     .getInitialDemand());
+                
+                Mediator mediator = MediatorFactory.getMediator(
+                		MediatorFactory.Strategy.DEFAULT, agentMap, agentMap.get(lowestKey).getAgentData().getInitialDemand());
                 service.execute(mediator);
             }
         }

@@ -1,4 +1,4 @@
-package cas.ypsiliform.mediator.negotiation;
+package cas.ypsiliform.mediator;
 
 import java.util.ArrayList;
 import java.util.stream.Collectors;
