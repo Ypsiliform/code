@@ -3,16 +3,8 @@
  */
 package cas.ypsiliform.starter;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.*;
+import java.util.*;
 
 public class Main
 {
@@ -34,6 +26,7 @@ public class Main
         String url = args[0];
         File config = new File(args[1]);
 
+        Map<Integer, Process> spawnedProcesses = new HashMap<>();
         Map<Integer, Double> storageCost = new HashMap<>();
         Map<Integer, Double> setupCost = new HashMap<>();
         Integer[] demands = new Integer[12];
@@ -102,9 +95,30 @@ public class Main
                                            requires.get(i),
                                            productionLimit.get(i));
             ProcessBuilder pb = new ProcessBuilder(processArgs);
-            pb.start();
-            System.out.println("Start agent " + i + " args "
-                + Arrays.toString(processArgs));
+            spawnedProcesses.put(i, pb.start());
+            System.out.println("Start agent " + i + " args " + Arrays.toString(processArgs));
+        }
+
+        Iterator it = spawnedProcesses.entrySet().iterator();
+        while(it.hasNext()) {
+            Map.Entry pair = (Map.Entry) it.next();
+            Process p = (Process)pair.getValue();
+            BufferedReader stdOut=new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String s;
+            while( (s=stdOut.readLine())!= null){
+                //just wait
+                try
+                {
+                    Thread.sleep(100);
+                }
+                catch ( InterruptedException e )
+                {
+                    e.printStackTrace();
+                }
+
+            }
+            System.out.println("Process for agent " + (Integer)pair.getKey() + "has terminated");
         }
     }
 

@@ -14,6 +14,7 @@ import java.util.Map;
 
 public class Agent implements MessageHandler{
 
+    private boolean running;
     private int id;                         // ID of the agent, starting from 1
     private double setupCost;               // costs for producing in this period
     private double storageCost;             // costs per unit per period for storing
@@ -48,6 +49,7 @@ public class Agent implements MessageHandler{
         this.websocketAddr = websocketAddr;
         this.productionTarget = productionTarget;
         this.confId = confId;
+        this.running = true;
     }
 
     public double getSetupCost() {
@@ -120,6 +122,14 @@ public class Agent implements MessageHandler{
 
     public void setConfId(String confId) {
         this.confId = confId;
+    }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
     }
 
     /******************************
@@ -312,9 +322,11 @@ public class Agent implements MessageHandler{
         } else if (message instanceof EndNegotiation) {
             //only print the contents for logging / statistic purposes
             handleEndNegotiation((EndNegotiation) message);
+            setRunning(false);
         } else if (message instanceof ErrorMessage) {
             //only print the error message
             handleErrorMessage((ErrorMessage) message);
+            setRunning(false);
         } else {
             System.out.println("Unknown message " + message.toString());
         }

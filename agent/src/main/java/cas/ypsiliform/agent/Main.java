@@ -45,6 +45,7 @@ public class Main
             }
         }
         int productionLimit = Integer.valueOf(args[7]);
+
         try
         {
             Agent a = new Agent(id,
@@ -57,15 +58,14 @@ public class Main
                                 config);
             a.startConnection();
 
-            while ( true )
+            while ( a.isRunning() )
             {
                 try
                 {
-                    Thread.sleep(10);
+                    Thread.sleep(100);
                 }
                 catch ( InterruptedException e )
                 {
-                    // TODO Auto-generated catch block
                     e.printStackTrace();
                 }
             }
