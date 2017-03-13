@@ -1,5 +1,6 @@
 package cas.ypsiliform.messages;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -25,7 +26,7 @@ public class MediatorRequest
         StringBuilder builder = new StringBuilder();
         builder.append("MediatorRequest [solutions=");
         builder.append(solutions);
-        builder.append("]");
+        builder.append("]\n");
         return builder.toString();
     }
 

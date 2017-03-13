@@ -58,11 +58,15 @@ public class AgentResponse extends AbstractMessage {
 		StringBuilder builder = new StringBuilder();
 		builder.append("AgentResponse [selection=");
 		builder.append(selection);
-		builder.append(", demands=");
-		builder.append(demands);
-		builder.append(", cost=");
+		builder.append(", demands={");
+		for(Map.Entry<Integer, Integer[]> entry : getDemands().entrySet()) {
+			builder.append(entry.getKey()+"=");
+			builder.append(Arrays.toString(entry.getValue()));
+			builder.append(" ");
+		}
+		builder.append("}, cost=");
 		builder.append(costs);
-		builder.append("]");
+		builder.append("]\n");
 		return builder.toString();
 	}
 

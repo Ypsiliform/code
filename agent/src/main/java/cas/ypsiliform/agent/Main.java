@@ -12,10 +12,10 @@ public class Main
     {
         if ( args.length != 8 )
         {
-            throw new IllegalArgumentException("8 arguments require!");
+            throw new IllegalArgumentException("8 arguments required!");
         }
         int id = Integer.valueOf(args[0]);
-        System.out.println("I'm Agent No. " + id);
+        System.out.println("Starting Agent No. " + id + ". Negotiation in progress, please wait for completion.");
         String config = args[1];
         String url = args[2];
         double storageCost = Double.valueOf(args[3]);
@@ -58,14 +58,13 @@ public class Main
                                 config);
             a.startConnection();
 
+            //Terminate this process when the negotiation is finished.
+            //This is required for executing multiple tests in one run
             while ( a.isRunning() )
             {
-                try
-                {
+                try {
                     Thread.sleep(100);
-                }
-                catch ( InterruptedException e )
-                {
+                } catch ( InterruptedException e ) {
                     e.printStackTrace();
                 }
             }

@@ -4,16 +4,21 @@
 package cas.ypsiliform.starter;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.nio.file.*;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static java.nio.file.Files.readAllBytes;
+import static java.nio.file.Paths.get;
 
 public class Main
 {
 
     private static String OS = System.getProperty("os.name").toLowerCase();
+    private static Path logFilePath;
 
     //args:
     // 1. url to mediator-server 
@@ -44,10 +49,12 @@ public class Main
 
         File possibleFolder = new File(args[1]);
         if(possibleFolder.isDirectory()) {
-            allFilesInFolder = Files.walk(Paths.get(args[1])).filter(Files::isRegularFile).map(Path::toFile).collect(Collectors.toList());
+            allFilesInFolder = Files.walk(get(args[1])).filter(Files::isRegularFile).map(Path::toFile).collect(Collectors.toList());
         } else {
             allFilesInFolder.add(possibleFolder);
         }
+
+        creatLogFile();
 
         for(File config : allFilesInFolder) {
             String fileEnding = "";
@@ -62,11 +69,52 @@ public class Main
 
             System.out.println("Start test execution for " + config.getName());
 
-            for(i = 0; i < numberOfRepetitionsPerConfig;i++) {
+            for(i = 1; i <= numberOfRepetitionsPerConfig;i++) {
                 readConfigFile(config, storageCost, setupCost, demands, requires, productionLimit);
                 spawnProcesses(config, url, storageCost, setupCost, demands, requires, productionLimit, spawnedProcesses);
                 waitForProcessesToTerminate(spawnedProcesses);
+                collectResults(config.getName(), i);
             }
+        }
+    }
+
+    private static void collectResults(String configName, int iteration) throws IOException {
+        Double sum = 0.0;
+        StringBuilder mediatorSolution = new StringBuilder();
+        StringBuilder csv = new StringBuilder();
+        csv.append(configName + ";" + iteration + ";");
+
+        for(int i=1;i<=5;i++) {
+            String[] tokens = new String(readAllBytes(get("agent_" + i + "_result"))).split(";");
+            Double costs = round( Double.valueOf(tokens[0]), 2);
+            sum += costs;
+            csv.append(costs + ";");
+            mediatorSolution.append(tokens[1]);
+        }
+
+        csv.append(sum + ";" + mediatorSolution.toString() + System.getProperty("line.separator"));
+
+        Files.write(logFilePath, csv.toString().getBytes(), StandardOpenOption.APPEND);
+    }
+
+    private static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
+    private static void creatLogFile() {
+        logFilePath = Paths.get("./resultSummary.csv");
+        try {
+            Files.createDirectories(logFilePath.getParent());
+            Files.createFile(logFilePath);
+            Files.write(logFilePath, "Testkonfiguration;Iteration;Agent 1;Agent 2;Agent 3;Agent 4;Agent 5;Gesamtkosten;Vorgabe des Mediators\n".getBytes());
+        } catch (FileAlreadyExistsException e) {
+            //File exists, so don't do anything
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -98,6 +146,7 @@ public class Main
                     requires.get(i),
                     productionLimit.get(i));
             ProcessBuilder pb = new ProcessBuilder(processArgs);
+            pb.redirectErrorStream(true);
             spawnedProcesses.put(i, pb.start());
             System.out.println("Start agent " + i + " args " + Arrays.toString(processArgs));
         }
@@ -117,13 +166,8 @@ public class Main
             BufferedReader stdOut=new BufferedReader(new InputStreamReader(p.getInputStream()));
             while( (s=stdOut.readLine())!= null){
                 //just wait
-                try {
-                    Thread.sleep(100);
-                } catch ( InterruptedException e ) {
-                    e.printStackTrace();
-                }
             }
-            System.out.println("Process for agent " + (Integer)pair.getKey() + " has terminated");
+            p.destroy();
         }
     }
 

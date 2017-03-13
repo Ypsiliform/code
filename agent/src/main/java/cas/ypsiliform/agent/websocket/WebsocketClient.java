@@ -46,7 +46,7 @@ public class WebsocketClient {
 
 	@OnMessage
 	public void onMessage(Session userSession, AbstractMessage message) {
-		System.out.println("new message = " + message);
+		//System.out.println("new message = " + message);
 		lock.readLock().lock();
 		try {
 			handlers.forEach(handler -> {
