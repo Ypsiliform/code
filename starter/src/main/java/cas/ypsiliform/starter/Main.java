@@ -92,6 +92,7 @@ public class Main
             mediatorSolution.append(tokens[1]);
         }
 
+        sum = round(sum, 2);
         csv.append(sum + ";" + mediatorSolution.toString() + System.getProperty("line.separator"));
 
         Files.write(logFilePath, csv.toString().getBytes(), StandardOpenOption.APPEND);
