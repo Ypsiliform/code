@@ -4,7 +4,11 @@
 package cas.ypsiliform.starter;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class Main
 {
@@ -18,67 +22,66 @@ public class Main
         throws FileNotFoundException,
             IOException
     {
-        if ( args.length != 2 )
-        {
-            throw new IllegalArgumentException("two arguments are required. 1. url, 2. config file");
-        }
+        Map<Integer, Process> spawnedProcesses  = new HashMap<>();
+        Map<Integer, Double> storageCost        = new HashMap<>();
+        Map<Integer, Double> setupCost          = new HashMap<>();
+        Map<Integer, List<Integer>> requires    = new HashMap<>();
+        Map<Integer, Integer> productionLimit   = new HashMap<>();
+        Integer[] demands                       = new Integer[12];
+        int numberOfRepetitionsPerConfig = 1;
+        List<File> allFilesInFolder = new ArrayList<>();
+
+        if ( args.length != 3 )
+            throw new IllegalArgumentException("[ERROR] Three arguments are required. 1. url, 2. config file, 3. Number of test repetitions");
 
         String url = args[0];
-        File config = new File(args[1]);
 
-        Map<Integer, Process> spawnedProcesses = new HashMap<>();
-        Map<Integer, Double> storageCost = new HashMap<>();
-        Map<Integer, Double> setupCost = new HashMap<>();
-        Integer[] demands = new Integer[12];
-        Map<Integer, List<Integer>> requires = new HashMap<>();
-        Map<Integer, Integer> productionLimit = new HashMap<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(config)))
-        {
-            String line;
-            boolean first = true;
-            int lineCount = 0;
-
-            while ( (line = br.readLine()) != null )
-            {
-                if ( first )
-                {
-                    first = false;
-                    continue;
-                }
-                if ( line.trim().length() <= 0 )
-                {
-                    continue;
-                }
-                //split any whitespace
-                String[] split = line.split("\\s+");
-                if ( lineCount < 5 )
-                {
-                    storageCost.put(Integer.valueOf(split[0].trim()),
-                                    Double.valueOf(split[1].trim()));
-                }
-                if ( lineCount >= 5 && lineCount < 10 )
-                {
-                    setupCost.put(Integer.valueOf(split[0].trim()),
-                                  Double.valueOf(split[1].trim()));
-                }
-                if ( lineCount >= 10 && lineCount < 22 )
-                {
-                    demands[lineCount - 10] = Integer.valueOf(split[1].trim());
-                }
-                if ( lineCount >= 22 && lineCount < 27 )
-                {
-                    List<Integer> requiresTmp = readList(split);
-                    requires.put(Integer.valueOf(split[0].trim()), requiresTmp);
-                }
-                if ( lineCount >= 27 && lineCount < 32 )
-                {
-                    productionLimit.put(Integer.valueOf(split[0].trim()),
-                                        Integer.valueOf(split[1].trim()));
-                }
-                lineCount++;
-            }
+        try {
+            numberOfRepetitionsPerConfig = Integer.valueOf(args[2]);
+        } catch(NumberFormatException e) {
+            throw new IllegalArgumentException("[ERROR] " + args[2] + " is not a valid number.");
         }
 
+        File possibleFolder = new File(args[1]);
+        if(possibleFolder.isDirectory()) {
+            allFilesInFolder = Files.walk(Paths.get(args[1])).filter(Files::isRegularFile).map(Path::toFile).collect(Collectors.toList());
+        } else {
+            allFilesInFolder.add(possibleFolder);
+        }
+
+        for(File config : allFilesInFolder) {
+            String fileEnding = "";
+            int i = config.getName().lastIndexOf('.');
+            if(i>0)
+                fileEnding = config.getName().substring(i+1);
+
+            if(!fileEnding.equals("req")) {
+                System.out.println("Skip wrong fileEnding: " + fileEnding);
+                continue;
+            }
+
+            System.out.println("Start test execution for " + config.getName());
+
+            for(i = 0; i < numberOfRepetitionsPerConfig;i++) {
+                readConfigFile(config, storageCost, setupCost, demands, requires, productionLimit);
+                spawnProcesses(config, url, storageCost, setupCost, demands, requires, productionLimit, spawnedProcesses);
+                waitForProcessesToTerminate(spawnedProcesses);
+            }
+        }
+    }
+
+    /**
+     * Spawns 5 agent processes
+     * */
+    private static void spawnProcesses(File config,
+                                       String url,
+                                       Map<Integer, Double> storageCost,
+                                       Map<Integer, Double> setupCost,
+                                       Integer[] demands,
+                                       Map<Integer, List<Integer>> requires,
+                                       Map<Integer, Integer> productionLimit,
+                                       Map<Integer, Process> spawnedProcesses
+    ) throws IOException {
         for ( int i = 1; i < 6; i++ )
         {
             Integer[] demandsTmp = new Integer[0];
@@ -87,41 +90,46 @@ public class Main
                 demandsTmp = demands;
             }
             String[] processArgs = getArgs(i,
-                                           config.getName(),
-                                           url,
-                                           storageCost.get(i),
-                                           setupCost.get(i),
-                                           demandsTmp,
-                                           requires.get(i),
-                                           productionLimit.get(i));
+                    config.getName(),
+                    url,
+                    storageCost.get(i),
+                    setupCost.get(i),
+                    demandsTmp,
+                    requires.get(i),
+                    productionLimit.get(i));
             ProcessBuilder pb = new ProcessBuilder(processArgs);
             spawnedProcesses.put(i, pb.start());
             System.out.println("Start agent " + i + " args " + Arrays.toString(processArgs));
         }
+    }
 
+    /**
+     * Loops until all the spawned processes are completed
+     * */
+    private static void waitForProcessesToTerminate(Map<Integer, Process> spawnedProcesses) throws IOException {
+        String s;
         Iterator it = spawnedProcesses.entrySet().iterator();
         while(it.hasNext()) {
             Map.Entry pair = (Map.Entry) it.next();
             Process p = (Process)pair.getValue();
-            BufferedReader stdOut=new BufferedReader(new InputStreamReader(p.getInputStream()));
 
-            String s;
+            //Process.waitFor() terminates once the jar file was loaded, so check the outputstreams instead
+            BufferedReader stdOut=new BufferedReader(new InputStreamReader(p.getInputStream()));
             while( (s=stdOut.readLine())!= null){
                 //just wait
-                try
-                {
+                try {
                     Thread.sleep(100);
-                }
-                catch ( InterruptedException e )
-                {
+                } catch ( InterruptedException e ) {
                     e.printStackTrace();
                 }
-
             }
-            System.out.println("Process for agent " + (Integer)pair.getKey() + "has terminated");
+            System.out.println("Process for agent " + (Integer)pair.getKey() + " has terminated");
         }
     }
 
+    /**
+     * Prepares the arguments required to spawn an agent process depending on the running OS
+     * */
     private static String[] getArgs(int id,
                                     String config,
                                     String url,
@@ -166,7 +174,68 @@ public class Main
         return args;
     }
 
-    private static List<Integer> readList(String[] split)
+    /**
+     * Reads the provided configuration file and sets the values accordingly
+     * */
+    private static void readConfigFile(File config,
+                                       Map<Integer, Double> storageCost,
+                                       Map<Integer, Double> setupCost,
+                                       Integer[] demands,
+                                       Map<Integer, List<Integer>> requires,
+                                       Map<Integer, Integer> productionLimit
+                                       ) throws IOException
+    {
+        BufferedReader br = new BufferedReader(new FileReader(config));
+        String line;
+        boolean first = true;
+        int lineCount = 0;
+
+        while ( (line = br.readLine()) != null )
+        {
+            if ( first )
+            {
+                first = false;
+                continue;
+            }
+            if ( line.trim().length() <= 0 )
+            {
+                continue;
+            }
+            //split any whitespace
+            String[] split = line.split("\\s+");
+            if ( lineCount < 5 )
+            {
+                storageCost.put(Integer.valueOf(split[0].trim()),
+                        Double.valueOf(split[1].trim()));
+            }
+            if ( lineCount >= 5 && lineCount < 10 )
+            {
+                setupCost.put(Integer.valueOf(split[0].trim()),
+                        Double.valueOf(split[1].trim()));
+            }
+            if ( lineCount >= 10 && lineCount < 22 )
+            {
+                demands[lineCount - 10] = Integer.valueOf(split[1].trim());
+            }
+            if ( lineCount >= 22 && lineCount < 27 )
+            {
+                List<Integer> requiresTmp = readRequiredList(split);
+                requires.put(Integer.valueOf(split[0].trim()), requiresTmp);
+            }
+            if ( lineCount >= 27 && lineCount < 32 )
+            {
+                productionLimit.put(Integer.valueOf(split[0].trim()),
+                        Integer.valueOf(split[1].trim()));
+            }
+            lineCount++;
+        }
+    }
+
+    /**
+     * If an agent depends on more than one subagent, this dependecy is provided in the form of space separated String
+     * and is transformed into a list of dependencies.
+     * */
+    private static List<Integer> readRequiredList(String[] split)
     {
         List<Integer> requires = new ArrayList<>();
         if ( split.length == 1 )
@@ -182,30 +251,22 @@ public class Main
 
     public static boolean isWindows()
     {
-
         return OS.contains("win");
-
     }
 
     public static boolean isMac()
     {
-
         return OS.contains("mac");
-
     }
 
     public static boolean isUnix()
     {
-
         return OS.contains("nix") || OS.contains("nux") || OS.contains("aix");
-
     }
 
     public static boolean isSolaris()
     {
-
         return OS.contains("sunos");
-
     }
 
 }
