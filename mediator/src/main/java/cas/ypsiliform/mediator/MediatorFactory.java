@@ -12,9 +12,9 @@ public class MediatorFactory {
 
 	public static Mediator getMediator(Strategy strategy, Map<Integer, AgentProxy> agents, Integer[] primaryDemands) {
 		switch (strategy) {
+		case DEFAULT:
 		case VOTING:
 			return new VoteBasedMediator(agents, primaryDemands);
-		case DEFAULT:
 		case COST:
 			return new CostBasedMediator(agents, primaryDemands);
 		default:

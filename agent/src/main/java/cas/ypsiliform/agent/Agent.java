@@ -5,15 +5,21 @@ import cas.ypsiliform.agent.websocket.MessageHandler;
 import cas.ypsiliform.agent.websocket.WebsocketClient;
 import cas.ypsiliform.messages.*;
 
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.*;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Calendar;
 import java.util.Map;
 
 public class Agent implements MessageHandler{
 
+    private Path logFilePath;
+    private boolean running;
     private int id;                         // ID of the agent, starting from 1
     private double setupCost;               // costs for producing in this period
     private double storageCost;             // costs per unit per period for storing
@@ -32,6 +38,8 @@ public class Agent implements MessageHandler{
         this.storageCost = storageCost;
         this.setupCost = setupCost;
         this.productionLimit = productionLimit;
+        this.running = true;
+        creatLogFile();
     }
 
     /**
@@ -48,6 +56,21 @@ public class Agent implements MessageHandler{
         this.websocketAddr = websocketAddr;
         this.productionTarget = productionTarget;
         this.confId = confId;
+        this.running = true;
+        creatLogFile();
+    }
+
+    private void creatLogFile() {
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+        this.logFilePath = Paths.get("./log_agent_" + this.id + "_conf_" + this.confId + "_" + timeStamp);
+        try {
+            Files.createDirectories(logFilePath.getParent());
+            Files.createFile(logFilePath);
+        } catch (FileAlreadyExistsException e) {
+            //File exists, so don't do anything
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public double getSetupCost() {
@@ -121,6 +144,16 @@ public class Agent implements MessageHandler{
     public void setConfId(String confId) {
         this.confId = confId;
     }
+
+    public boolean isRunning() {
+        return running;
+    }
+
+    public void setRunning(boolean running) {
+        this.running = running;
+    }
+
+
 
     /******************************
      * Connection setup and registering
@@ -312,12 +345,15 @@ public class Agent implements MessageHandler{
         } else if (message instanceof EndNegotiation) {
             //only print the contents for logging / statistic purposes
             handleEndNegotiation((EndNegotiation) message);
+            setRunning(false);
         } else if (message instanceof ErrorMessage) {
             //only print the error message
             handleErrorMessage((ErrorMessage) message);
+            setRunning(false);
         } else {
             System.out.println("Unknown message " + message.toString());
         }
+        System.out.print(".");
     }
 
     /**
@@ -367,6 +403,13 @@ public class Agent implements MessageHandler{
             }
         }
 
+        try {
+            Files.write(this.logFilePath, req.toString().getBytes(), StandardOpenOption.APPEND);
+            Files.write(this.logFilePath, res.toString().getBytes(), StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         return res;
     }
 
@@ -383,11 +426,28 @@ public class Agent implements MessageHandler{
         double costs = getProductionCosts(productionArray, proposal.getDemands());
 
         //print the created arrays
-        System.out.println("Agent " + this.id + " has ended negotioation with the following result:");
-        System.out.println("solution: " + Arrays.toString(proposal.getSolution()));
-        System.out.println("demand:   " + Arrays.toString(proposal.getDemands()));
-        System.out.println("result:   " + Arrays.toString(productionArray));
-        System.out.println("Costs:    " + costs);
+        StringBuilder logBuilder = new StringBuilder();
+        logBuilder.append("\nAgent " + this.id + " has ended negotioation with the following result:\n");
+        logBuilder.append("demand:   " + Arrays.toString(proposal.getDemands()) + "\n");
+        logBuilder.append("solution: " + Arrays.toString(proposal.getSolution()) + "\n");
+        logBuilder.append("result:   " + Arrays.toString(productionArray) + "\n");
+        logBuilder.append("Costs:    " + costs);
+
+        StringBuilder csvBuilder = new StringBuilder();
+        csvBuilder.append(costs + ";");
+        for(boolean b : proposal.getSolution()) {
+            if (b)
+                csvBuilder.append("1");
+            else
+                csvBuilder.append("0");
+        }
+
+        try {
+            Files.write(this.logFilePath, logBuilder.toString().getBytes(), StandardOpenOption.APPEND);
+            Files.write(Paths.get("./agent_" + this.id + "_result"), csvBuilder.toString().getBytes());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         return 0;
     }
@@ -400,7 +460,12 @@ public class Agent implements MessageHandler{
      * @return 0 for success (currently no error defined)
      * */
     protected int handleErrorMessage(ErrorMessage errmsg) {
-        System.out.println("Received Error Message: " + errmsg.toString());
+        String msg = "Received Error Message: " + errmsg.toString();
+        try {
+            Files.write(this.logFilePath, msg.getBytes(), StandardOpenOption.APPEND);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         return 0;
     }
 
